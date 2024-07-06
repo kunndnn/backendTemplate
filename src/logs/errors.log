@@ -1,0 +1,14 @@
+2024-07-06T15:18:27.052Z error: 500 - E11000 duplicate key error collection: boilerPlate.users index: email_1 dup key: { email: "test@gsmaisssl.com" } - /api/v1/auth/register - POST - ::ffff:127.0.0.1
+2024-07-06T15:18:29.507Z error: 500 - E11000 duplicate key error collection: boilerPlate.users index: email_1 dup key: { email: "test@gsmaisssl.com" } - /api/v1/auth/register - POST - ::ffff:127.0.0.1
+2024-07-06T15:18:31.046Z error: 500 - E11000 duplicate key error collection: boilerPlate.users index: email_1 dup key: { email: "test@gsmaisssl.com" } - /api/v1/auth/register - POST - ::ffff:127.0.0.1
+2024-07-06T15:18:32.888Z error: 500 - E11000 duplicate key error collection: boilerPlate.users index: email_1 dup key: { email: "test@gsmaisssl.com" } - /api/v1/auth/register - POST - ::ffff:127.0.0.1
+2024-07-06T15:19:19.826Z error: 500 - E11000 duplicate key error collection: boilerPlate.users index: email_1 dup key: { email: "test@gsmaisssl.com" } - /api/v1/auth/register - POST - ::ffff:127.0.0.1
+2024-07-06T15:19:22.070Z error: 500 - E11000 duplicate key error collection: boilerPlate.users index: email_1 dup key: { email: "test@gsmaisssl.com" } - /api/v1/auth/register - POST - ::ffff:127.0.0.1
+2024-07-06T15:19:23.842Z error: 500 - E11000 duplicate key error collection: boilerPlate.users index: email_1 dup key: { email: "test@gsmaisssl.com" } - /api/v1/auth/register - POST - ::ffff:127.0.0.1
+2024-07-06T15:19:25.060Z error: 500 - E11000 duplicate key error collection: boilerPlate.users index: email_1 dup key: { email: "test@gsmaisssl.com" } - /api/v1/auth/register - POST - ::ffff:127.0.0.1
+2024-07-06T15:19:26.213Z error: 500 - E11000 duplicate key error collection: boilerPlate.users index: email_1 dup key: { email: "test@gsmaisssl.com" } - /api/v1/auth/register - POST - ::ffff:127.0.0.1
+2024-07-06T15:19:27.379Z error: 500 - E11000 duplicate key error collection: boilerPlate.users index: email_1 dup key: { email: "test@gsmaisssl.com" } - /api/v1/auth/register - POST - ::ffff:127.0.0.1
+2024-07-06T15:19:28.308Z error: 500 - E11000 duplicate key error collection: boilerPlate.users index: email_1 dup key: { email: "test@gsmaisssl.com" } - /api/v1/auth/register - POST - ::ffff:127.0.0.1
+2024-07-06T15:19:29.326Z error: 500 - E11000 duplicate key error collection: boilerPlate.users index: email_1 dup key: { email: "test@gsmaisssl.com" } - /api/v1/auth/register - POST - ::ffff:127.0.0.1
+2024-07-06T15:23:03.298Z error: 500 - E11000 duplicate key error collection: boilerPlate.users index: email_1 dup key: { email: "test@gsmasisssl.com" } - /api/v1/auth/register - POST - ::ffff:127.0.0.1
+2024-07-06T15:26:58.673Z error: 500 - E11000 duplicate key error collection: boilerPlate.users index: email_1 dup key: { email: "test@gsmasissssssl.com" } - /api/v1/auth/register - POST - ::ffff:127.0.0.1

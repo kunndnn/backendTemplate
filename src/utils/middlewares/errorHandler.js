@@ -1,18 +1,25 @@
-// errorHandler.js
+import logger from "#helpers/logger";
+import { ErrorResponse } from "#helpers/response";
 
 // Error handling middleware function
 const errorHandler = (err, req, res, next) => {
-  // Set the response status code
-  res.status(err.status || 500);
+  console.log({ err });
+  //make entry in logger file
+  logger.error(
+    `${err.status || 500} - ${err.message} - ${req.originalUrl} - ${
+      req.method
+    } - ${req.ip}`
+  );
 
-  // Respond with JSON containing the error message
-  res.json({
-    error: {
-      message: err.message || "Internal Server Error",
-      status: err.status || 500,
-    },
-  });
+  res
+    .status(err.status || 500)
+    .json(
+      new ErrorResponse(
+        err.status || 500,
+        err.message || "Internal Server Error",
+        []
+      )
+    );
 };
 
 export default errorHandler;
-// module.exports = errorHandler;
