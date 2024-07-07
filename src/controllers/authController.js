@@ -10,7 +10,6 @@ const generateTokens = async (userId) => {
     const refreshToken = user.generateRefreshToken();
     user.refreshToken = refreshToken;
     await user.save();
-
     return { accessToken, refreshToken };
   } catch (error) {
     throw new ErrorResponse(
@@ -107,6 +106,8 @@ export const logout = promiseHandler(async (req, res) => {
     },
   });
   res
+    .clearCookie("accessToken")
+    .clearCookie("refreshToken")
     .status(200)
     .json(new successResponse(200, "User logout Successfully", []));
 });

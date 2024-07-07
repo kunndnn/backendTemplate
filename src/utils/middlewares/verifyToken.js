@@ -1,5 +1,4 @@
 import jwt from "jsonwebtoken";
-import jwt from "jsonwebtoken";
 import { ErrorResponse } from "#helpers/response";
 import { promiseHandler } from "#helpers/promiseHandler";
 import userModel from "#models/user";
@@ -10,8 +9,7 @@ export const verifyToken = promiseHandler(async (req, res, next) => {
       req.cookies?.accessToken ||
       req.header("Authorization")?.replace("Bearer ", "");
 
-      if (!token) {
-      // console.log("inside the token");
+    if (!token) {
       throw new ErrorResponse(401, "Unauthorized request");
     }
 
@@ -34,16 +32,6 @@ export const verifyToken = promiseHandler(async (req, res, next) => {
           401,
           error?.message || "Invalid or Expire access token",
           []
-        )
-      );
-    // throw new ErrorResponse(401, error?.message || "Invalid access token");
-    res
-      .status(401)
-      .json(
-        new ErrorResponse(
-          401,
-          error?.message || "Invalid or Expire access token",
-          [] 
         )
       );
     // throw new ErrorResponse(401, error?.message || "Invalid access token");
