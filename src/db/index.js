@@ -30,3 +30,4 @@ export const con = createConnection({
 // });
 // export default connectDB;
 // export { connectDB, con };
+// export { connectDB, con };
