@@ -2,12 +2,13 @@ import { promiseHandler } from "#helpers/promiseHandler";
 import { successResponse, ErrorResponse } from "#helpers/response";
 import userModel from "#models/user";
 import jwt from "jsonwebtoken";
+import { Types } from "mongoose";
 
 const generateTokens = async (userId) => {
   try {
-    const user = await userModel.findById(userId);
-    const accessToken = user.generateAccessToken();
-    const refreshToken = user.generateRefreshToken();
+    const user = await userModel.findById(userId),
+      accessToken = user.generateAccessToken(),
+      refreshToken = user.generateRefreshToken();
     user.refreshToken = refreshToken;
     await user.save();
     return { accessToken, refreshToken };
@@ -21,14 +22,24 @@ const generateTokens = async (userId) => {
 };
 
 export const register = promiseHandler(async (req, res) => {
-  const profile = req.file.filename;
-  req.body.image = profile;
-  const user = await userModel.create(req.body);
-  const token = user.generateAccessToken();
+  const userData = req.body;
+  if (req.file) {
+    userData.image = req.file.filename;
+  }
+  const user = await userModel.create(userData),
+    accessToken = user.generateAccessToken(),
+    refreshToken = user.generateRefreshToken();
+
   res
     .status(200)
+    .cookie("accessToken", accessToken)
+    .cookie("refreshToken", refreshToken)
     .json(
-      new successResponse(200, "User Registered Successfully", { user, token })
+      new successResponse(200, "User Registered Successfully", {
+        user,
+        accessToken,
+        refreshToken,
+      })
     );
 });
 
@@ -37,20 +48,22 @@ export const login = promiseHandler(async (req, res) => {
   const user = await userModel.findOne({ email });
 
   if (!user) {
-    // return res.status(403).json(new ErrorResponse(403, "User not found", []));
     throw new ErrorResponse(403, "User not found", []);
   }
+  
   const isPasswordValid = await user.isPasswordCorrect(password);
-
   if (!isPasswordValid) {
     throw new ErrorResponse(401, "Invalid credentials", []);
   }
-
-  const { accessToken, refreshToken } = await generateTokens(user._id);
-  const loggedInUser = await userModel
-    .findById(user._id)
-    .select("-password -refreshToken");
-
+  // const { accessToken, refreshToken } = await generateTokens(user._id);
+  // const loggedInUser = await userModel
+  //   .findById(user._id)
+  //   .select("-password -refreshToken");
+  const [{ accessToken, refreshToken }, loggedInUser] = await Promise.all([
+    generateTokens(user._id),
+    userModel.findById(user._id).select("-password -refreshToken"),
+  ]);
+  
   res
     .status(200)
     .cookie("accessToken", accessToken)
@@ -105,6 +118,7 @@ export const logout = promiseHandler(async (req, res) => {
       refreshToken: 1, // this removes the field from document
     },
   });
+
   res
     .clearCookie("accessToken")
     .clearCookie("refreshToken")
@@ -113,9 +127,24 @@ export const logout = promiseHandler(async (req, res) => {
 });
 
 export const profile = promiseHandler(async (req, res) => {
-  const user = await userModel
-    .findById(req.user._id)
-    .select("-password -refreshToken");
+  // const user = await userModel
+  //   .findById(req.user._id)
+  //   .select("-password -refreshToken");
+  const userId = String(req.user._id); // Ensure it's converted to string
+  const user = await userModel.aggregate([
+    { $match: { _id: new Types.ObjectId(userId) } },
+    {
+      $project: {
+        _id: 1,
+        fullName: 1,
+        email: 1,
+        image: { $ifNull: ["$image", ""] },
+        imagePath: `${req.protocol}://${req.get("host")}/temp/`,
+        createdAt: 1,
+        updatedAt: 1,
+      },
+    },
+  ]);
   res
     .status(200)
     .json(new successResponse(200, "User profile fetched successfully", user));
