@@ -1,6 +1,9 @@
 import mongoose from "mongoose";
 import { DB_NAME } from "../constants.js";
-const connectDB = async () => {
+
+import { createConnection } from "mysql";
+
+export const connectDB = async () => {
   try {
     const connectionInstance = await mongoose.connect(
       `${process.env.MONGODB_URI}/${DB_NAME}`
@@ -14,5 +17,16 @@ const connectDB = async () => {
   }
 };
 
+//mysql connection
+export const con = createConnection({
+  host: "localhost",
+  user: "root",
+  password: "",
+  database: "testing",
+});
+
+// con.connect(function (err) {
+//   if (err) throw err;
+// });
 // export default connectDB;
-export { connectDB };
+// export { connectDB, con };

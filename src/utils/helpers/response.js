@@ -4,7 +4,7 @@ const sendResponse = async (res, success, data, message, statusCode) => {
 };
 
 class successResponse {
-  constructor(statusCode, message = "Success", data) {
+  constructor(statusCode, message = "Success", data = []) {
     this.statusCode = statusCode;
     this.message = message;
     this.data = data;
@@ -13,7 +13,7 @@ class successResponse {
 }
 
 class ErrorResponse {
-  constructor(statusCode, message = "False", data) {
+  constructor(statusCode, message = "False", data = []) {
     this.statusCode = statusCode;
     this.message = message;
     this.data = data;

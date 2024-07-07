@@ -14,6 +14,12 @@ const userSchema = new Schema(
       type: String,
       required: [true, "Email is required"],
       unique: [true, "Email already exist"],
+      validate: {
+        validator: function (v) {
+          return /^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/.test(v);
+        },
+        message: ({ value }) => `${value} is not a valid email address!`,
+      },
       lowecase: true,
       trim: true,
     },
