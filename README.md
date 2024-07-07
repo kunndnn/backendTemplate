@@ -1,5 +1,31 @@
 # backendTemplate
 
+# to start project
+
+> npm start
+
+# to start in development environment
+
+> npm run dev
+
+# to stop project
+
+> ctrl +c
+
+# to acquire all install packages
+
+> npm i
+
+# to uninstall a package
+
+> npm uninstall <moduleName>
+
+# to install a package
+
+> npm install <moduleName>
+
+# Folder structure
+
 <b> src is the entry point folder </b>
 
 > public/ - contains static assets (i.e., images, fonts, etc.) that will be served up by Express when a request is received from a client browser window.
