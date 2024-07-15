@@ -186,14 +186,14 @@ export const profileUpdate = promiseHandler(async (req, res) => {
 export const changePass = promiseHandler(async (req, res) => {
   const { password, newPassword } = req.body;
 
-  const user = await userModel.findById(req.user._id);
+  const user = await userModel.findById(req.user?._id);
   const isPasswordCorrect = await user.isPasswordCorrect(password);
 
   if (!isPasswordCorrect)
     return res.status(422).json(new ErrorSend(422, "Old password Incorrect"));
 
   user.password = newPassword;
-  await user.save();
+  await user.save({ validateBeforeSave: false });
   res
     .status(200)
     .json(new SuccessSend(200, "Password updated successfully", []));
