@@ -3,7 +3,7 @@ const sendResponse = async (res, success, data, message, statusCode) => {
   return res.status(statusCode).json(result);
 };
 
-class successResponse {
+class SuccessSend {
   constructor(statusCode, message = "Success", data = []) {
     this.statusCode = statusCode;
     this.message = message;
@@ -12,7 +12,7 @@ class successResponse {
   }
 }
 
-class ErrorResponse {
+class ErrorSend {
   constructor(statusCode, message = "False", data = []) {
     this.statusCode = statusCode;
     this.message = message;
@@ -21,4 +21,4 @@ class ErrorResponse {
   }
 }
 
-export { sendResponse, successResponse, ErrorResponse };
+export { sendResponse, SuccessSend, ErrorSend };

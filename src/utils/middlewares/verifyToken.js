@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { ErrorResponse } from "#helpers/response";
+import { ErrorSend } from "#helpers/response";
 import { promiseHandler } from "#helpers/promiseHandler";
 import userModel from "#models/user";
 
@@ -10,7 +10,7 @@ export const verifyToken = promiseHandler(async (req, res, next) => {
       req.header("Authorization")?.replace("Bearer ", "");
 
     if (!token) {
-      throw new ErrorResponse(401, "Unauthorized request");
+      throw new ErrorSend(401, "Unauthorized request");
     }
 
     const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
@@ -19,7 +19,7 @@ export const verifyToken = promiseHandler(async (req, res, next) => {
       .select("-password -refreshToken");
 
     if (!user) {
-      throw new ErrorResponse(401, "Invalid Access Token");
+      throw new ErrorSend(401, "Invalid Access Token");
     }
 
     req.user = user;
@@ -28,12 +28,12 @@ export const verifyToken = promiseHandler(async (req, res, next) => {
     res
       .status(401)
       .json(
-        new ErrorResponse(
+        new ErrorSend(
           401,
           error?.message || "Invalid or Expire access token",
           []
         )
       );
-    // throw new ErrorResponse(401, error?.message || "Invalid access token");
+    // throw new ErrorSend(401, error?.message || "Invalid access token");
   }
 });

@@ -1,8 +1,10 @@
 import { promiseHandler } from "#helpers/promiseHandler";
-import { successResponse, ErrorResponse } from "#helpers/response";
+import { SuccessSend, ErrorSend } from "#helpers/response";
 import userModel from "#models/user";
 import jwt from "jsonwebtoken";
 import { Types } from "mongoose";
+import { promises as fs } from "fs"; // Correct import for fs.promises
+import path from "path";
 
 const generateTokens = async (userId) => {
   try {
@@ -13,7 +15,7 @@ const generateTokens = async (userId) => {
     await user.save();
     return { accessToken, refreshToken };
   } catch (error) {
-    throw new ErrorResponse(
+    throw new ErrorSend(
       500,
       "Something went wrong while generating referesh and access token",
       []
@@ -31,11 +33,11 @@ export const register = promiseHandler(async (req, res) => {
     refreshToken = user.generateRefreshToken();
 
   res
-    .status(200)
+    .status(201)
     .cookie("accessToken", accessToken)
     .cookie("refreshToken", refreshToken)
     .json(
-      new successResponse(200, "User Registered Successfully", {
+      new SuccessSend(201, "User Registered Successfully", {
         user,
         accessToken,
         refreshToken,
@@ -48,12 +50,12 @@ export const login = promiseHandler(async (req, res) => {
   const user = await userModel.findOne({ email });
 
   if (!user) {
-    throw new ErrorResponse(403, "User not found", []);
+    throw new ErrorSend(403, "User not found", []);
   }
-  
+
   const isPasswordValid = await user.isPasswordCorrect(password);
   if (!isPasswordValid) {
-    throw new ErrorResponse(401, "Invalid credentials", []);
+    throw new ErrorSend(401, "Invalid credentials", []);
   }
   // const { accessToken, refreshToken } = await generateTokens(user._id);
   // const loggedInUser = await userModel
@@ -63,13 +65,13 @@ export const login = promiseHandler(async (req, res) => {
     generateTokens(user._id),
     userModel.findById(user._id).select("-password -refreshToken"),
   ]);
-  
+
   res
     .status(200)
     .cookie("accessToken", accessToken)
     .cookie("refreshToken", refreshToken)
     .json(
-      new successResponse(200, "User logged In Successfully", {
+      new SuccessSend(200, "User logged In Successfully", {
         user: loggedInUser,
         accessToken,
         refreshToken,
@@ -81,7 +83,7 @@ export const refreshAccessToken = promiseHandler(async (req, res) => {
   const { refreshToken: userRefreshToken } = req.cookies || req.body;
 
   if (!userRefreshToken) {
-    throw new ErrorResponse(401, "Unauthorized request");
+    throw new ErrorSend(401, "Unauthorized request");
   }
 
   const decoded = jwt.verify(
@@ -91,11 +93,11 @@ export const refreshAccessToken = promiseHandler(async (req, res) => {
 
   const user = await userModel.findById(decoded?._id);
   if (!user) {
-    throw new ErrorResponse(401, "Invalid refresh token");
+    throw new ErrorSend(401, "Invalid refresh token");
   }
 
   if (userRefreshToken !== user?.refreshToken) {
-    throw new ErrorResponse(401, "Refrresh token expired");
+    throw new ErrorSend(401, "Refrresh token expired");
   }
 
   const { accessToken, refreshToken } = await generateTokens(user._id);
@@ -105,7 +107,7 @@ export const refreshAccessToken = promiseHandler(async (req, res) => {
     .cookie("accessToken", accessToken)
     .cookie("refreshToken", refreshToken)
     .json(
-      new successResponse(200, "Token regenerated successfully", {
+      new SuccessSend(200, "Token regenerated successfully", {
         accessToken,
         refreshToken,
       })
@@ -123,7 +125,7 @@ export const logout = promiseHandler(async (req, res) => {
     .clearCookie("accessToken")
     .clearCookie("refreshToken")
     .status(200)
-    .json(new successResponse(200, "User logout Successfully", []));
+    .json(new SuccessSend(200, "User logout Successfully", []));
 });
 
 export const profile = promiseHandler(async (req, res) => {
@@ -147,5 +149,39 @@ export const profile = promiseHandler(async (req, res) => {
   ]);
   res
     .status(200)
-    .json(new successResponse(200, "User profile fetched successfully", user));
+    .json(new SuccessSend(200, "User profile fetched successfully", user));
+});
+
+export const profileUpdate = promiseHandler(async (req, res) => {
+  const userData = req.body;
+
+  const existingUser = await userModel.findById(req.user._id);
+  if (!existingUser) {
+    return res.status(404).json(new ErrorSend(404, "User not found"));
+  }
+
+  if (req.file) {
+    userData.image = req.file.filename;
+    // If the existing user has an image, delete the old image file
+    if (existingUser.image) {
+      // const oldImagePath = path.join(__dirname,"../../public/temp",existingUser.image);
+      const oldImagePath = path.join(
+        process.cwd(),
+        "public/temp",
+        existingUser.image
+      );
+      await fs.unlink(oldImagePath);
+    }
+  } else {
+    userData.image = existingUser.image;
+  }
+
+  const user = await userModel
+    .findByIdAndUpdate(req.user._id, userData, {
+      new: true,
+    })
+    .select("-password -createdAt -updatedAt");
+  res
+    .status(200)
+    .json(new SuccessSend(200, "Profile updated successfully", user));
 });

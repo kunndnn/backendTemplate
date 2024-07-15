@@ -1,5 +1,5 @@
 import logger from "#helpers/logger";
-import { ErrorResponse } from "#helpers/response";
+import { ErrorSend } from "#helpers/response";
 import mongoose from "mongoose";
 
 export default (err, req, res, next) => {
@@ -48,5 +48,5 @@ export default (err, req, res, next) => {
   );
   // Send the error response
 
-  res.status(statusCode).json(new ErrorResponse(statusCode, message, []));
+  res.status(statusCode).json(new ErrorSend(statusCode, message, []));
 };
