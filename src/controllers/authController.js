@@ -57,10 +57,7 @@ export const login = promiseHandler(async (req, res) => {
   if (!isPasswordValid) {
     throw new ErrorSend(401, "Invalid credentials", []);
   }
-  // const { accessToken, refreshToken } = await generateTokens(user._id);
-  // const loggedInUser = await userModel
-  //   .findById(user._id)
-  //   .select("-password -refreshToken");
+
   const [{ accessToken, refreshToken }, loggedInUser] = await Promise.all([
     generateTokens(user._id),
     userModel.findById(user._id).select("-password -refreshToken"),
@@ -184,4 +181,20 @@ export const profileUpdate = promiseHandler(async (req, res) => {
   res
     .status(200)
     .json(new SuccessSend(200, "Profile updated successfully", user));
+});
+
+export const changePass = promiseHandler(async (req, res) => {
+  const { password, newPassword } = req.body;
+
+  const user = await userModel.findById(req.user._id);
+  const isPasswordCorrect = await user.isPasswordCorrect(password);
+
+  if (!isPasswordCorrect)
+    return res.status(422).json(new ErrorSend(422, "Old password Incorrect"));
+
+  user.password = newPassword;
+  await user.save();
+  res
+    .status(200)
+    .json(new SuccessSend(200, "Password updated successfully", []));
 });

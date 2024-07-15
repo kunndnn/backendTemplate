@@ -11,6 +11,7 @@ import {
   logout,
   profile,
   profileUpdate,
+  changePass,
 } from "../controllers/authController.js";
 
 router.route("/register").post(upload.single("image"), register); // register
@@ -28,5 +29,20 @@ router.use(verifyToken); // middleware to verify access token for the below rout
 router.route("/logout").post(logout); // logout
 router.route("/profile").get(profile); // get profile
 router.route("/profile").post(upload.single("image"), profileUpdate); // get profile
+router.route("/changePassword").post(
+  body("password").notEmpty().withMessage("Please enter old password"),
+  body("newPassword").notEmpty().withMessage("Please enter newPassword"),
+  body("confirmPassword")
+    .notEmpty()
+    .withMessage("Please enter confirmPassword")
+    .custom(async (confirmPassword, { req }) => {
+      const { newPassword } = req.body;
+      if (newPassword !== confirmPassword) {
+        throw new Error("Passwords must be same");
+      }
+    }),
+  validationCheck,
+  changePass
+); //change password
 
 export default router;
