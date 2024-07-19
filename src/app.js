@@ -26,7 +26,6 @@ app
 
 // import routes
 import auth from "./routes/auth.js";
-
 // use routes
 app.use("/api/v1/auth", auth);
 
@@ -36,16 +35,20 @@ app.use(errorHandler);
 
 // socket handlers
 import { userHandler } from "./controllers/sockets/index.js";
-
 const onConnection = (socket) => {
+  console.log(socket.id, "connected");
   userHandler(io, socket);
+
+  socket.on("disconnect", () => {
+    console.log(socket.id, "user disconnected");
+  });
 };
 
 io.on("connection", onConnection);
 
 // io.on("connection", (socket) => {
 //   // basic
-//   console.log(socket.id, "connected"); // ojIckSD2jqNzOqIrAGzL
+//   console.log(socket.id, "connected");
 //   socket.on("test", (data) => {
 //     io.emit("test", `hello ${data.name}`);
 //   });
