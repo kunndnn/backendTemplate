@@ -1,8 +1,20 @@
 import express, { json, urlencoded, static as static_ } from "express";
 import cookieParser from "cookie-parser";
 import logger from "morgan";
-
+import { createServer } from "http";
+import { Server } from "socket.io";
 const app = express();
+const { PORT } = process.env;
+
+// for socket
+const httpServer = createServer(app);
+//initializing io
+const io = new Server(httpServer, {
+  /* options */
+  cors: {
+    origin: `http://localhost:${PORT}`,
+  },
+});
 
 // set middlewares
 app
@@ -21,4 +33,23 @@ app.use("/api/v1/auth", auth);
 //error handler middleware
 import errorHandler from "#middlewares/errorHandler";
 app.use(errorHandler);
-export { app };
+
+// socket handlers
+import { userHandler } from "./controllers/sockets/index.js";
+
+const onConnection = (socket) => {
+  userHandler(io, socket);
+};
+
+io.on("connection", onConnection);
+
+// io.on("connection", (socket) => {
+//   // basic
+//   console.log(socket.id, "connected"); // ojIckSD2jqNzOqIrAGzL
+//   socket.on("test", (data) => {
+//     io.emit("test", `hello ${data.name}`);
+//   });
+// });
+
+// export { app };
+export { httpServer };

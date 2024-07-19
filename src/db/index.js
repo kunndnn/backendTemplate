@@ -1,10 +1,10 @@
-import mongoose from "mongoose";
+import { connect } from "mongoose";
 import { DB_NAME } from "../constants.js";
 import { createConnection } from "mysql";
 
 export const connectDB = async () => {
   try {
-    const connectionInstance = await mongoose.connect(
+    const connectionInstance = await connect(
       `${process.env.MONGODB_URI}/${DB_NAME}`
     );
     console.log(
