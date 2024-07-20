@@ -36,7 +36,8 @@ app.use(errorHandler);
 // socket handlers
 import { userHandler } from "./controllers/sockets/index.js";
 const onConnection = (socket) => {
-  console.log(socket.id, "connected");
+  console.log(socket.id, "connected", socket.client.id, "the client id");
+
   userHandler(io, socket);
 
   socket.on("disconnect", () => {

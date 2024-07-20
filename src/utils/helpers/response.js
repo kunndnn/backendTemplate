@@ -5,19 +5,19 @@ const sendResponse = async (res, success, data, message, statusCode) => {
 
 class SuccessSend {
   constructor(statusCode, message = "Success", data = []) {
+    this.success = statusCode < 400; // true
     this.statusCode = statusCode;
     this.message = message;
     this.data = data;
-    this.success = statusCode < 400;
   }
 }
 
 class ErrorSend {
   constructor(statusCode, message = "False", data = []) {
+    this.success = statusCode < 400; // false
     this.statusCode = statusCode;
     this.message = message;
     this.data = data;
-    this.success = statusCode < 400;
   }
 }
 
