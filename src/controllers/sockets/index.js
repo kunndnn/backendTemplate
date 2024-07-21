@@ -9,6 +9,13 @@ export const userHandler = (io, socket) => {
 
   //users listing
   socket.on("chatsListing", async (body) => {
+    /* 
+    {
+      "userId": "669558bd39b95bb57db786d7",
+      "page":1,
+      "limit":10
+    }
+      */
     try {
       if (typeof body !== "object") body = JSON.parse(body);
       const { userId } = body;
@@ -52,11 +59,37 @@ export const userHandler = (io, socket) => {
           },
         },
         { $unwind: "$userDetails" }, // Unwind the userDetails array
+        {
+          $lookup: {
+            from: "chats",
+            localField: "_id",
+            foreignField: "roomId",
+            as: "chatMessage",
+            // to apply conditions within the lookup
+            pipeline: [
+              { $sort: { createdAt: -1 } },
+              { $limit: 1 },
+              {
+                $project: {
+                  _id: 1,
+                  message: 1,
+                  type: 1,
+                  createdAt: {
+                    $dateToString: {
+                      format: "%Y-%m-%d %H:%M:%S",
+                      date: "$createdAt",
+                    },
+                  }, // format the date
+                },
+              },
+            ],
+          },
+        },
+        { $unwind: "$chatMessage" },
         { $skip: offset }, // skip users listing
         { $limit: limit }, // limit per page users
         { $sort: { _id: -1 } }, // sorting in descending order
       ]);
-
       const data = { chats, limit, page };
       socket.emit("chatsListing", new SuccessSend(200, "chats listing", data));
     } catch (error) {
