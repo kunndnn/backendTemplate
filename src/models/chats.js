@@ -28,7 +28,7 @@ const chats = new Schema(
     type: {
       // message type
       type: String,
-      enum: ["text", "file"],
+      enum: ["text", "file", "both"],
       require: [true, "message type is required"],
     },
   },
