@@ -23,13 +23,17 @@ const chats = new Schema(
     message: {
       // message
       type: String,
-      required: [true, "message is required"],
+      default: null,
     },
     type: {
       // message type
       type: String,
       enum: ["text", "file", "both"],
       require: [true, "message type is required"],
+    },
+    attachment: {
+      type: String,
+      default: null,
     },
   },
   { timestamps: true }
