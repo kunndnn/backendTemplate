@@ -23,6 +23,11 @@ app
   .use(logger("dev"))
   .use(cookieParser());
 
+// emergency
+app.get("/boom", (req, res) => {
+  process.exit(1);
+});
+
 // user routes
 const auth = require("./routes/auth");
 app.use("/api/v1/auth", auth);
