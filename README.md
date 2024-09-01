@@ -1,0 +1,1 @@
+# This is a common JS based syntax template
