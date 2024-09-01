@@ -1,5 +1,5 @@
 class SuccessSend {
-  constructor(statusCode, message = "Success", data = []) {
+  constructor(statusCode, message = "Success", data = null) {
     this.success = statusCode < 400; // true
     this.statusCode = statusCode;
     this.message = message;

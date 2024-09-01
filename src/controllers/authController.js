@@ -5,6 +5,7 @@ const { Types } = require("mongoose");
 const fs = require("fs").promises;
 const path = require("path");
 const userModel = require("../models/user");
+const { bufferToImage } = require("../utils/helpers/bufferToFile");
 
 const generateTokens = async (userId) => {
   try {

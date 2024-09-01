@@ -3,7 +3,7 @@ const { createServer } = require("http");
 const { Server } = require("socket.io");
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
-
+const { join } = require("path");
 const app = express();
 const { PORT } = process.env;
 
@@ -19,7 +19,7 @@ const io = new Server(httpServer, {
 app
   .use(express.json())
   .use(express.urlencoded({ extended: false }))
-  .use(express.static(__dirname + "/public"))
+  .use(express.static(join(__dirname, "../public")))
   .use(logger("dev"))
   .use(cookieParser());
 
