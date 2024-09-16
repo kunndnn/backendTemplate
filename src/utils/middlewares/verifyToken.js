@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
 const { ErrorSend } = require("../helpers/response");
 const { promiseHandler } = require("../helpers/promiseHandler");
-const userModel = require("../../models/user");
+const userModel = require("../../models/user.models");
 
 exports.verifyToken = promiseHandler(async (req, res, next) => {
   try {

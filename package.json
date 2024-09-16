@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
-    "debug": "set DEBUG=express:* & nodemon src/index.js"
+    "debug": "set DEBUG=express:* & nodemon src/index.js",
+    "seed": "node src/utils/helpers/seeder.js"
   },
   "keywords": [],
   "author": "",

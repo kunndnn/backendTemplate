@@ -4,8 +4,9 @@ const jwt = require("jsonwebtoken");
 const { Types } = require("mongoose");
 const fs = require("fs").promises;
 const path = require("path");
-const userModel = require("../models/user");
+const userModel = require("../models/user.models");
 const { bufferToImage } = require("../utils/helpers/bufferToFile");
+const { isNullOrUndefined } = require("util");
 
 const generateTokens = async (userId) => {
   try {
@@ -19,7 +20,7 @@ const generateTokens = async (userId) => {
     throw new ErrorSend(
       500,
       "Something went wrong while generating referesh and access token",
-      []
+      null
     );
   }
 };
@@ -51,12 +52,12 @@ exports.login = promiseHandler(async (req, res) => {
   const user = await userModel.findOne({ email });
 
   if (!user) {
-    throw new ErrorSend(403, "User not found", []);
+    throw new ErrorSend(403, "User not found", null);
   }
 
   const isPasswordValid = await user.isPasswordCorrect(password);
   if (!isPasswordValid) {
-    throw new ErrorSend(401, "Invalid credentials", []);
+    throw new ErrorSend(401, "Invalid credentials", null);
   }
 
   const [{ accessToken, refreshToken }, loggedInUser] = await Promise.all([
@@ -123,7 +124,7 @@ exports.logout = promiseHandler(async (req, res) => {
     .clearCookie("accessToken")
     .clearCookie("refreshToken")
     .status(200)
-    .json(new SuccessSend(200, "User logout Successfully", []));
+    .json(new SuccessSend(200, "User logout Successfully", null));
 });
 
 exports.profile = promiseHandler(async (req, res) => {
@@ -197,5 +198,5 @@ exports.changePass = promiseHandler(async (req, res) => {
   await user.save({ validateBeforeSave: false });
   res
     .status(200)
-    .json(new SuccessSend(200, "Password updated successfully", []));
+    .json(new SuccessSend(200, "Password updated successfully", null));
 });

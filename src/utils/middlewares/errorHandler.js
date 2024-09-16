@@ -1,13 +1,19 @@
 const logger = require("../helpers/logger");
 const { ErrorSend } = require("../helpers/response");
 const mongoose = require("mongoose");
+
 module.exports = (err, req, res, next) => {
   // Set default error status and message
   let statusCode = 500;
   let message = "Internal Server Error";
 
+  // Check if the error is an instance of ErrorSend
+  if (err instanceof ErrorSend) {
+    statusCode = err.statusCode;
+    message = err.message;
+  }
   // Handle Mongoose validation errors
-  if (err instanceof mongoose.Error.ValidationError) {
+  else if (err instanceof mongoose.Error.ValidationError) {
     statusCode = 400;
     message = Object.values(err.errors)
       .map((e) => e.message)
@@ -24,17 +30,23 @@ module.exports = (err, req, res, next) => {
     statusCode = 400;
     message = `Invalid ${err.path}: ${err.value}.`;
   }
-  // Handle other errors (including runtime errors)
+  // Handle validation errors
   else if (err.name === "ValidationError") {
     statusCode = 400;
     message = err.message;
-  } else if (err.name === "SyntaxError") {
+  }
+  // Handle syntax errors
+  else if (err.name === "SyntaxError") {
     statusCode = 400;
     message = "Invalid JSON payload";
-  } else if (err.name === "UnauthorizedError") {
+  }
+  // Handle unauthorized errors
+  else if (err.name === "UnauthorizedError") {
     statusCode = 401;
     message = "Invalid token";
-  } else {
+  }
+  // Use the default message and status for unhandled errors
+  else {
     message = err.message || message;
   }
 
@@ -45,7 +57,7 @@ module.exports = (err, req, res, next) => {
       req.method
     } - ${req.ip}`
   );
-  // Send the error response
 
-  res.status(statusCode).json(new ErrorSend(statusCode, message));
+  // Send the error response
+  res.status(statusCode).json(new ErrorSend(statusCode, message, null));
 };

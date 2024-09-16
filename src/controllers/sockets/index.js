@@ -1,6 +1,6 @@
 const { Types } = require("mongoose");
-const chatRoomsModel = require("../../models/chatRooms");
-const chatsModel = require("../../models/chats");
+const chatRoomsModel = require("../../models/chatRooms.models");
+const chatsModel = require("../../models/chats.models");
 const { SuccessSend, ErrorSend } = require("../../utils/helpers/response");
 
 exports.userHandler = (io, socket) => {

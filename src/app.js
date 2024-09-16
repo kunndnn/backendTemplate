@@ -29,7 +29,7 @@ app.get("/boom", (req, res) => {
 });
 
 // user routes
-const auth = require("./routes/auth");
+const auth = require("./routes/auth.routes");
 app.use("/api/v1/auth", auth);
 
 // error handler middlewares
