@@ -25,7 +25,7 @@ app
   .use(logger("dev"));
 
 // import routes
-import auth from "./routes/auth.js";
+import auth from "./routes/auth.routes.js";
 // use routes
 app.use("/api/v1/auth", auth);
 

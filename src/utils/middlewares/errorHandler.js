@@ -3,30 +3,28 @@ import { ErrorSend } from "#helpers/response";
 import mongoose from "mongoose";
 
 export default (err, req, res, next) => {
-  // Set default error status and message
   let statusCode = 500;
   let message = "Internal Server Error";
 
-  // Handle Mongoose validation errors
-  if (err instanceof mongoose.Error.ValidationError) {
+  // Check if the error is an instance of ErrorSend
+  if (err instanceof ErrorSend) {
+    statusCode = err.statusCode;
+    message = err.message;
+  }
+  // Handle other errors (e.g., Mongoose, ValidationError, etc.)
+  else if (err instanceof mongoose.Error.ValidationError) {
     statusCode = 400;
     message = Object.values(err.errors)
       .map((e) => e.message)
       .join(", ");
-  }
-  // Handle Mongoose duplicate key errors
-  else if (err.code && err.code === 11000) {
+  } else if (err.code && err.code === 11000) {
     statusCode = 409;
     const field = Object.keys(err.keyValue);
     message = `Duplicate key error: ${field} already exists.`;
-  }
-  // Handle Mongoose cast errors (invalid ObjectId)
-  else if (err instanceof mongoose.Error.CastError) {
+  } else if (err instanceof mongoose.Error.CastError) {
     statusCode = 400;
     message = `Invalid ${err.path}: ${err.value}.`;
-  }
-  // Handle other errors (including runtime errors)
-  else if (err.name === "ValidationError") {
+  } else if (err.name === "ValidationError") {
     statusCode = 400;
     message = err.message;
   } else if (err.name === "SyntaxError") {
@@ -46,7 +44,14 @@ export default (err, req, res, next) => {
       req.method
     } - ${req.ip}`
   );
-  // Send the error response
 
-  res.status(statusCode).json(new ErrorSend(statusCode, message, []));
+  // Send the error response including the message
+  res.status(statusCode).json({
+    success: false,
+    statusCode,
+    message, // Ensure message is included in the response
+    data: [],
+  });
 };
+
+

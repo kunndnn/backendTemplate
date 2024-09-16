@@ -12,13 +12,15 @@ class SuccessSend {
   }
 }
 
-class ErrorSend {
+class ErrorSend extends Error {
   constructor(statusCode, message = "False", data = []) {
+    super(message); // Call the Error constructor to set the message
     this.success = statusCode < 400; // false
     this.statusCode = statusCode;
-    this.message = message;
+    this.message = message; // Make sure message is included
     this.data = data;
   }
 }
+
 
 export { sendResponse, SuccessSend, ErrorSend };

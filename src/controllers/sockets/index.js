@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
-import chatRoomsModel from "#models/chatRooms";
-import chatsModel from "#models/chats";
+import chatRoomsModel from "#models/chatRooms.models";
+import chatsModel from "#models/chats.models";
 import { SuccessSend, ErrorSend } from "#helpers/response";
 export const userHandler = (io, socket) => {
   socket.on("test", (data) => {

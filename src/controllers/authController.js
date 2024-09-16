@@ -1,6 +1,6 @@
 import { promiseHandler } from "#helpers/promiseHandler";
 import { SuccessSend, ErrorSend } from "#helpers/response";
-import userModel from "#models/user";
+import userModel from "#models/user.models";
 import jwt from "jsonwebtoken";
 import { Types } from "mongoose";
 import { promises as fs } from "fs"; // Correct import for fs.promises

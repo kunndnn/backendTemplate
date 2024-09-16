@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import { ErrorSend } from "#helpers/response";
 import { promiseHandler } from "#helpers/promiseHandler";
-import userModel from "#models/user";
+import userModel from "#models/user.models";
 
 export const verifyToken = promiseHandler(async (req, res, next) => {
   try {
