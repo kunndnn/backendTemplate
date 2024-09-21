@@ -17,11 +17,11 @@ const io = new Server(httpServer, {
 });
 
 app
-  .use(express.json())
-  .use(express.urlencoded({ extended: false }))
-  .use(express.static(join(__dirname, "../public")))
-  .use(logger("dev"))
-  .use(cookieParser());
+  .use(express.json()) // to convert the body data in JSON
+  .use(express.urlencoded({ extended: false })) // to encode url data
+  .use(express.static(join(__dirname, "../public")))// set public as static folder for assets
+  .use(logger("dev"))// logger in console
+  .use(cookieParser());// to use cookies
 
 // emergency
 app.get("/boom", (req, res) => {

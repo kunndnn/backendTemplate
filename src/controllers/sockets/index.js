@@ -4,9 +4,9 @@ const chatsModel = require("../../models/chats.models");
 const { SuccessSend, ErrorSend } = require("../../utils/helpers/response");
 
 exports.userHandler = (io, socket) => {
-  socket.on("test", (data) => {
-    io.emit("test", `hello ${data.name} !!!`);
-  });
+  // socket.on("test", (data) => {
+  //   io.emit("test", `hello ${data.name} !!!`);
+  // });
 
   //users listing
   socket.on("chatsListing", async (body) => {

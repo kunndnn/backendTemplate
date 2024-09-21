@@ -24,10 +24,12 @@ router.route("/refresh-token").post(refreshAccessToken); // geenrate refresh tok
 
 router.use(verifyToken); // middleware to verify access token for the below routes
 router.route("/logout").post(logout); // logout
-router.route("/profile").get(profile); // get profile
-router.route("/profile").post(upload.single("image"), profileUpdate); // get profile
 router
-  .route("/changePassword")
+  .route("/profile")
+  .get(profile) // get profile
+  .post(upload.single("image"), profileUpdate); // get profile
+router
+  .route("/change-password")
   .post(signupValidations, validationCheck, changePass); //change password
 
 module.exports = router;
