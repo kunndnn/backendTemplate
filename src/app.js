@@ -18,11 +18,11 @@ const io = new Server(httpServer, {
 
 // set middlewares
 app
-  .use(json())
-  .use(urlencoded({ extended: true }))
-  .use(static_("public"))
-  .use(cookieParser())
-  .use(logger("dev"));
+  .use(json()) // to convert the body data in JSON
+  .use(urlencoded({ extended: true })) // to encode url data
+  .use(static_("public")) // set public as static folder for assets
+  .use(cookieParser()) // to use cookies
+  .use(logger("dev")); // logger in console
 
 // import routes
 import auth from "./routes/auth.routes.js";
