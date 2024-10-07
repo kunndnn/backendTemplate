@@ -24,6 +24,11 @@ app
   .use(cookieParser()) // to use cookies
   .use(logger("dev")); // logger in console
 
+  // emergency
+app.get("/boom", (req, res) => {
+  process.exit(1);
+});
+
 // import routes
 import auth from "./routes/auth.routes.js";
 // use routes
