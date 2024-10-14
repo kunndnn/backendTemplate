@@ -1,13 +1,37 @@
 import logger from "#helpers/logger";
 import { ErrorSend } from "#helpers/response";
 import mongoose from "mongoose";
+import { existsSync, unlinkSync } from "fs";
+import path from "path";
 
 export default (err, req, res, next) => {
   let statusCode = 500;
   let message = "Internal Server Error";
 
-  // Check if the error is an instance of ErrorSend
+  //delete file function
+  const deleteFile = (filePath) => {
+    if (existsSync(filePath)) unlinkSync(filePath);
+  };
+
+  if (req?.file) {
+    // if has single file then delete it
+    const filePath = path.resolve(req.file.path);
+    deleteFile(filePath);
+  }
+
+  // Check if there are multiple files (req.files) and delete them
+  if (req?.files) {
+    const files = Array.isArray(req.files)
+      ? req.files
+      : Object.values(req.files).flat();
+    files.forEach((file) => {
+      const filePath = path.resolve(file.path);
+      deleteFile(filePath);
+    });
+  }
+
   if (err instanceof ErrorSend) {
+    // Check if the error is an instance of ErrorSend
     statusCode = err.statusCode;
     message = err.message;
   }
