@@ -27,6 +27,15 @@ const userSchema = new Schema(
       type: String,
       default: null,
     },
+    // is user online or not
+    isOnline: {
+      type: Boolean,
+      default: false,
+    },
+    lastOnline: {
+      type: Date,
+      default: null,
+    },
     password: {
       type: String,
       required: [true, "Password is required"],
