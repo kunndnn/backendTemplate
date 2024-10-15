@@ -1,7 +1,16 @@
 const { Types } = require("mongoose");
 const chatRoomsModel = require("../../models/chatRooms.models");
 const chatsModel = require("../../models/chats.models");
+const userModel = require("../../models/user.models");
 const { SuccessSend, ErrorSend } = require("../../utils/helpers/response");
+
+// to emit the error
+const emitError = (err, socket, statusCode = 500) => {
+  socket.emit(
+    "error",
+    new ErrorSend(statusCode, "Error sending message", err.message)
+  );
+};
 
 exports.userHandler = (io, socket) => {
   // socket.on("test", (data) => {
@@ -94,10 +103,7 @@ exports.userHandler = (io, socket) => {
       const data = { chats, limit, page };
       socket.emit("chatsListing", new SuccessSend(200, "chats listing", data));
     } catch (error) {
-      socket.emit(
-        "error",
-        new ErrorSend(500, "Error sending message", error.message)
-      );
+      emitError(error, socket);
     }
   });
 
@@ -152,10 +158,7 @@ exports.userHandler = (io, socket) => {
       );
     } catch (error) {
       // io.emit("roomJoin", new ErrorSend(500, "Some Error occured", []));
-      socket.emit(
-        "error",
-        new ErrorSend(500, "Error sending message", error.message)
-      );
+      emitError(error, socket);
       console.log({ error });
     }
   });
@@ -180,10 +183,51 @@ exports.userHandler = (io, socket) => {
       // emit response
       io.to(room).emit("message", new SuccessSend(200, "message", chat));
     } catch (error) {
-      socket.emit(
-        "error",
-        new ErrorSend(500, "Error sending message", error.message)
+      emitError(error, socket);
+    }
+  });
+
+  //update online status
+  socket.on("onlineStatus", async (body) => {
+    try {
+      if (typeof body !== "object") body = JSON.parse(body);
+      const { userId, isOnline } = body;
+
+      // not a bool value then throw error
+      if (typeof isOnline !== "boolean")
+        throw new Error("Invalid online status");
+
+      let details = {};
+      if (isOnline) {
+        details = await userModel
+          .findByIdAndUpdate(userId, { isOnline }, { new: true })
+          .select("_id isOnline lastOnline");
+      } else {
+        details = await userModel
+          .findByIdAndUpdate(
+            userId,
+            {
+              isOnline,
+              lastOnline: Date.now(),
+            },
+            { new: true }
+          )
+          .select("_id isOnline lastOnline");
+      }
+
+      const result = {
+        userId: details._id,
+        isOnline: details.isOnline,
+        lastOnline: details.lastOnline,
+      };
+
+      // to all clients in the current namespace except the sender
+      socket.broadcast.emit(
+        "onlineStatus",
+        new SuccessSend(200, "Onine status updated", result)
       );
+    } catch (error) {
+      emitError(error, socket);
     }
   });
 };
