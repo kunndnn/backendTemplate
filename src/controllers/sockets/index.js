@@ -2,20 +2,20 @@ import { Types } from "mongoose";
 import chatRoomsModel from "#models/chatRooms.models";
 import chatsModel from "#models/chats.models";
 import userModels from "#models/user.models";
+import pinnedChatsModels from "#models/pinnedChats.models";
 import { SuccessSend, ErrorSend } from "#helpers/response";
 
 // to emit the error
-const emitError = (err, socket, statusCode = 500) => {
+const emitError = (socketType = "error", err, socket, statusCode = 500) =>
   socket.emit(
     "error",
     new ErrorSend(statusCode, "Error sending message", err.message)
   );
-};
 
-export const userHandler = (io, socket) => {
-  socket.on("test", (data) => {
-    io.emit("test", `hello ${data.name} !!!`);
-  });
+export const userHandler = async (io, socket) => {
+  // socket.on("test", (data) => {
+  //   io.emit("test", `hello ${data.name} !!!`);
+  // });
 
   //users listing
   socket.on("chatsListing", async (body) => {
@@ -103,7 +103,7 @@ export const userHandler = (io, socket) => {
       const data = { chats, limit, page };
       socket.emit("chatsListing", new SuccessSend(200, "chats listing", data));
     } catch (error) {
-      emitError(error, socket);
+      emitError("chatsListing", error, socket);
     }
   });
 
@@ -158,7 +158,7 @@ export const userHandler = (io, socket) => {
       );
     } catch (error) {
       // io.emit("roomJoin", new ErrorSend(500, "Some Error occured", []));
-      emitError(error, socket);
+      emitError("roomJoin", error, socket);
       console.log({ error });
     }
   });
@@ -183,7 +183,7 @@ export const userHandler = (io, socket) => {
       // emit response
       io.to(room).emit("message", new SuccessSend(200, "message", chat));
     } catch (error) {
-      emitError(error, socket);
+      emitError("message", error, socket);
     }
   });
 
@@ -197,23 +197,15 @@ export const userHandler = (io, socket) => {
       if (typeof isOnline !== "boolean")
         throw new Error("Invalid online status");
 
-      let details = {};
-      if (isOnline) {
-        details = await userModels
-          .findByIdAndUpdate(userId, { isOnline }, { new: true })
-          .select("_id isOnline lastOnline");
-      } else {
-        details = await userModels
-          .findByIdAndUpdate(
-            userId,
-            {
-              isOnline,
-              lastOnline: Date.now(),
-            },
-            { new: true }
-          )
-          .select("_id isOnline lastOnline");
-      }
+      // Update user status, setting lastOnline only when the user goes offline
+      const update = {
+        isOnline,
+        ...(isOnline === false && { lastOnline: Date.now() }), // Add `lastOnline` only if `isOnline` is false
+      };
+      const details = await userModels
+        .findByIdAndUpdate(userId, update, { new: true })
+        .select("_id isOnline lastOnline");
+      if (!details) throw new Error("User not found");
 
       const result = {
         userId: details._id,
@@ -227,7 +219,53 @@ export const userHandler = (io, socket) => {
         new SuccessSend(200, "Onine status updated", result)
       );
     } catch (error) {
-      emitError(error, socket);
+      emitError("onlineStatus", error, socket);
     }
+  });
+
+  // pin/unpin chat
+  socket.on("pinChat", async (body) => {
+    try {
+      if (typeof body !== "object") body = JSON.parse(body);
+      const { userId, pinChatId, type, chatType } = body;
+      const userObjId = new Types.ObjectId(String(userId)),
+        pinnedChat = new Types.ObjectId(String(pinChatId));
+
+      let msg = "chat pinned successfully";
+
+      if (type === "pin") {
+        // Check how many chats are already pinned for this user
+        const pinnedCount = await pinnedChatsModels.countDocuments({
+          userId: userObjId,
+        });
+
+        if (pinnedCount >= 3) {
+          msg = "You can pin up to 3 chats only";
+        } else {
+          // Pin the chat if the limit is not exceeded
+          await pinnedChatsModels.create({
+            userId: userObjId,
+            pinnedChat,
+            chatType,
+          });
+        }
+      } else if (type === "unpin") {
+        // Unpin chat
+        await pinnedChatsModels.findOneAndDelete({
+          userId: userObjId,
+          pinnedChat,
+        });
+        msg = "chat unpinned successfully";
+      }
+      socket.emit("pinChat", new SuccessSend(200, msg, {}));
+    } catch (error) {
+      console.log({ error });
+      emitError("pinChat", error, socket);
+    }
+  });
+
+  // on disconnect
+  socket.on("disconnect", () => {
+    console.log(socket.id, "user disconnected");
   });
 };
