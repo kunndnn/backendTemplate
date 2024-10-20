@@ -234,13 +234,15 @@ export const userHandler = async (io, socket) => {
       let msg = "chat pinned successfully";
 
       if (type === "pin") {
-        // Check how many chats are already pinned for this user
-        const pinnedCount = await pinnedChatsModels.countDocuments({
-          userId: userObjId,
-        });
-
+        const [pinnedCount, pinnedAlready] = await Promise.all([
+          pinnedChatsModels.countDocuments({ userId: userObjId }),
+          pinnedChatsModels.findOne({ userId: userObjId, pinnedChat }),
+        ]);
+        
         if (pinnedCount >= 3) {
           msg = "You can pin up to 3 chats only";
+        } else if (pinnedAlready) {
+          msg = "Chat already pinned";
         } else {
           // Pin the chat if the limit is not exceeded
           await pinnedChatsModels.create({

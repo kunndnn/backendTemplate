@@ -1,13 +1,14 @@
 import { Schema, model } from "mongoose";
 const { ObjectId } = Schema.Types;
-const pinned = new Schema(
+const pinnedSchema = new Schema(
   {
     // user who pinned the chats
-    userId: { type: ObjectId, required: [true, "User Id is required"] },
+    userId: { type: ObjectId, required: true, ref: "User" },
     // pinned users/groups
     pinnedChat: {
       type: ObjectId,
       required: [true, "Pinned chat Id is required"],
+      refPath: "chatType", // refPath for dynamic population based on chatType
     },
     //pinned type can be user or group
     chatType: {
@@ -19,4 +20,4 @@ const pinned = new Schema(
   { timestamps: true }
 );
 
-export default model("pinnedChat", pinned);
+export default model("PinnedChat", pinnedSchema);
