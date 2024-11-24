@@ -8,7 +8,7 @@ import { SuccessSend, ErrorSend } from "#helpers/response";
 // to emit the error
 const emitError = (socketType = "error", err, socket, statusCode = 500) =>
   socket.emit(
-    "error",
+    socketType,
     new ErrorSend(statusCode, "Error sending message", err.message)
   );
 
@@ -238,7 +238,7 @@ export const userHandler = async (io, socket) => {
           pinnedChatsModels.countDocuments({ userId: userObjId }),
           pinnedChatsModels.findOne({ userId: userObjId, pinnedChat }),
         ]);
-        
+
         if (pinnedCount >= 3) {
           msg = "You can pin up to 3 chats only";
         } else if (pinnedAlready) {
@@ -263,6 +263,81 @@ export const userHandler = async (io, socket) => {
     } catch (error) {
       console.log({ error });
       emitError("pinChat", error, socket);
+    }
+  });
+
+  // search messages
+  socket.on("msgSearch", async (body) => {
+    try {
+      if (typeof body !== "object") body = JSON.parse(body);
+      const { userId, message } = body;
+      const userObjId = new Types.ObjectId(String(userId));
+
+      const msgMatches = await chatsModel.aggregate([
+        {
+          $lookup: {
+            from: "chatrooms",
+            localField: "roomId",
+            foreignField: "_id",
+            pipeline: [
+              {
+                $match: {
+                  $or: [{ senderId: userObjId }, { receiverId: userObjId }],
+                },
+              },
+              {
+                $project: {
+                  _id: 1,
+                },
+              },
+            ],
+            as: "rooms",
+          },
+        },
+        {
+          $unwind: {
+            path: "$rooms", // Unwind the "rooms" array
+            preserveNullAndEmptyArrays: false, // Optional: Retain documents with no matches in "rooms"
+          },
+        },
+        {
+          $match: {
+            message: {
+              $regex: `.*${message}.*`,
+            },
+          },
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "senderId",
+            foreignField: "_id",
+            pipeline: [
+              {
+                $project: {
+                  _id: 1,
+                  fullName: 1,
+                  email: 1,
+                  image: 1,
+                },
+              },
+            ],
+            as: "sender",
+          },
+        },
+        {
+          $unwind: {
+            path: "$sender", // Unwind the "rooms" array
+          },
+        },
+      ]);
+      socket.emit(
+        "msgSearch",
+        new SuccessSend(200, "message retrived successfully", msgMatches)
+      );
+    } catch (error) {
+      console.log({ error });
+      emitError("msgSearch", error, socket);
     }
   });
 
