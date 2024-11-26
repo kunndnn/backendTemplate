@@ -268,6 +268,12 @@ export const userHandler = async (io, socket) => {
 
   // search messages
   socket.on("msgSearch", async (body) => {
+    /*
+    {
+    userId:"669ba7db0f5738196b8127cb",
+    message:"he"
+    }
+    */
     try {
       if (typeof body !== "object") body = JSON.parse(body);
       const { userId, message } = body;
@@ -326,9 +332,7 @@ export const userHandler = async (io, socket) => {
           },
         },
         {
-          $unwind: {
-            path: "$sender", // Unwind the "rooms" array
-          },
+          $unwind: "$sender", // Unwind the "rooms" array
         },
       ]);
       socket.emit(
@@ -338,6 +342,91 @@ export const userHandler = async (io, socket) => {
     } catch (error) {
       console.log({ error });
       emitError("msgSearch", error, socket);
+    }
+  });
+
+  socket.on("searchedMsg", async (body) => {
+    /*
+    {
+    msgId:"669ba7db0f5738196b8127cb"
+    }
+    */
+    try {
+      if (typeof body !== "object") body = JSON.parse(body);
+      const { msgId } = body;
+      const msgObjId = new Types.ObjectId(String(msgId));
+
+      const msgMatches = await chatsModel
+        .aggregate([
+          {
+            $facet: {
+              oldMsgs: [
+                { $match: { _id: { $lt: msgObjId } } },
+                { $sort: { _id: -1 } }, // Sort old messages in descending order (latest first)
+                { $limit: 5 }, // Limit to 5 previous messages
+              ],
+              newMsgs: [
+                { $match: { _id: { $gt: msgObjId } } },
+                { $sort: { _id: 1 } }, // Sort new messages in ascending order (oldest first)
+                { $limit: 5 }, // Limit to 5 upcoming messages
+              ],
+              currentMsg: [{ $match: { _id: msgObjId } }],
+            },
+          },
+          {
+            $project: {
+              messages: {
+                // Merge old, current, and new messages
+                $concatArrays: ["$oldMsgs", "$currentMsg", "$newMsgs"],
+              },
+            },
+          },
+          { $unwind: "$messages" }, // Unwind the merged messages to process each individually
+          {
+            $lookup: {
+              from: "users", // User collection
+              localField: "messages.senderId", // Match senderId in messages
+              foreignField: "_id", // Match the _id of users
+              pipeline: [
+                {
+                  $project: {
+                    _id: 1,
+                    fullName: 1,
+                    email: 1,
+                    image: 1,
+                  },
+                },
+              ],
+              as: "userDetails", // Store user details for each message
+            },
+          },
+          { $unwind: "$userDetails" }, // Unwind the userDetails array (since it's always an array of 1 user)
+          {
+            $addFields: {
+              "messages.userDetails": "$userDetails", // Add user details to each message
+            },
+          },
+          {
+            $group: {
+              _id: null, // No grouping, just flatten messages into an array
+              messages: { $push: "$messages" }, // Push all the messages into an array
+            },
+          },
+          {
+            $replaceRoot: {
+              newRoot: { messages: "$messages" }, // Replace the root with the messages array directly
+            },
+          },
+        ])
+        .then((data) => data[0]);
+
+      socket.emit(
+        "searchedMsg",
+        new SuccessSend(200, "searched message", msgMatches)
+      );
+    } catch (error) {
+      console.log({ error });
+      emitError("searchedMsg", error, socket);
     }
   });
 
