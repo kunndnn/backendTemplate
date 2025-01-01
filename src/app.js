@@ -2,20 +2,35 @@ import express, { json, urlencoded, static as static_ } from "express";
 import cookieParser from "cookie-parser";
 import logger from "morgan";
 import { createServer } from "http";
+import { createServer as createSecureServer } from "https";
 import { Server } from "socket.io";
 const app = express();
-const { PORT } = process.env;
+const { PORT, ENVIRONMENT } = process.env;
 
-// for socket
-const httpServer = createServer(app);
+// Choose HTTP or HTTPS server based on ENVIRONMENT
+let httpServer = createServer(app);
+
+if (ENVIRONMENT === "production") {
+  // Load SSL certificate and key
+  const options = {
+    key: fs.readFileSync(path.resolve("path/to/ssl/key.pem")),
+    cert: fs.readFileSync(path.resolve("path/to/ssl/cert.pem")),
+  };
+
+  httpServer = createSecureServer(options, app);
+  console.log("Using HTTPS server for production.");
+}
 //initializing io
+const allowedOrigins = [
+  `http${ENVIRONMENT === "production" ? "s" : ""}://localhost:${PORT}`, // Handle HTTP or HTTPS origin
+];
+// Initialize Socket.IO
 const io = new Server(httpServer, {
-  /* options */
   cors: {
-    origin: `http://localhost:${PORT}`,
+    origin: allowedOrigins,
+    methods: ["GET", "POST"], // Specify allowed HTTP methods
   },
 });
-
 // set middlewares
 app
   .use(json()) // to convert the body data in JSON
@@ -24,7 +39,7 @@ app
   .use(cookieParser()) // to use cookies
   .use(logger("dev")); // logger in console
 
-  // emergency
+// emergency
 app.get("/boom", (req, res) => {
   process.exit(1);
 });
@@ -41,24 +56,18 @@ app.use(errorHandler);
 // socket handlers
 import { userHandler } from "./controllers/sockets/index.js";
 const onConnection = async (socket) => {
+  const clientIP = socket.handshake;
+  console.log(clientIP, "connected");
   console.log(socket.id, "connected", socket.client.id, "the client id");
-
   await userHandler(io, socket);
-
-  // socket.on("disconnect", () => {
-  //   console.log(socket.id, "user disconnected");
-  // });
 };
 
+io.use((socket, next) => {
+  const origin = socket.handshake.headers.origin;
+  if (!allowedOrigins.includes(origin))
+    return next(new Error("Origin not allowed"));
+  next(); // Allow connection if all checks pass
+});
+
 io.on("connection", onConnection);
-
-// io.on("connection", (socket) => {
-//   // basic
-//   console.log(socket.id, "connected");
-//   socket.on("test", (data) => {
-//     io.emit("test", `hello ${data.name}`);
-//   });
-// });
-
-// export { app };
 export { httpServer };
