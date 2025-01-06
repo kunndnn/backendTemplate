@@ -10,7 +10,7 @@ const { PORT, ENVIRONMENT } = process.env;
 // Choose HTTP or HTTPS server based on ENVIRONMENT
 let httpServer = createServer(app);
 
-if (ENVIRONMENT === "production") {
+if (ENVIRONMENT === "production") { 
   // Load SSL certificate and key
   const options = {
     key: fs.readFileSync(path.resolve("path/to/ssl/key.pem")),

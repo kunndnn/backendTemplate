@@ -108,6 +108,60 @@ export const userHandler = async (io, socket) => {
   });
 
   // join the room and send all the chats till now
+  // socket.on("roomJoin", async (body) => {
+  //   try {
+  //     if (typeof body !== "object") body = JSON.parse(body); // convert to JSON
+  //     const { senderId, receiverId } = body;
+  //     let roomId;
+  //     const roomFound = await chatRoomsModel.findOne({
+  //       $or: [
+  //         {
+  //           $and: [
+  //             { senderId: new Types.ObjectId(String(senderId)) },
+  //             { receiverId: new Types.ObjectId(String(receiverId)) },
+  //           ],
+  //         },
+  //         {
+  //           $and: [
+  //             { senderId: new Types.ObjectId(String(receiverId)) },
+  //             { receiverId: new Types.ObjectId(String(senderId)) },
+  //           ],
+  //         },
+  //       ],
+  //     });
+  //     if (!roomFound) {
+  //       // roomId found then send room
+  //       const room = await chatRoomsModel.create({ senderId, receiverId });
+  //       roomId = String(room._id);
+  //     } else {
+  //       roomId = String(roomFound._id);
+  //     }
+
+  //     const limit = body.limit || 10,
+  //       page = body.page || 1;
+  //     const offset = (page - 1) * limit;
+  //     const chats = await chatsModel
+  //       .find({
+  //         roomId: new Types.ObjectId(roomId),
+  //       })
+  //       .populate("senderId", "fullName image")
+  //       .skip(offset)
+  //       .limit(limit)
+  //       .sort({ _id: -1 });
+
+  //     //join room
+  //     socket.join(roomId);
+  //     const data = { roomId, chats, limit, page };
+  //     io.to(roomId).emit(
+  //       "roomJoin",
+  //       new SuccessSend(200, "messages listing", data)
+  //     );
+  //   } catch (error) {
+  //     // io.emit("roomJoin", new ErrorSend(500, "Some Error occured", []));
+  //     emitError("roomJoin", error, socket);
+  //     console.log({ error });
+  //   }
+  // });
   socket.on("roomJoin", async (body) => {
     try {
       if (typeof body !== "object") body = JSON.parse(body); // convert to JSON
@@ -129,35 +183,32 @@ export const userHandler = async (io, socket) => {
           },
         ],
       });
-      if (!roomFound) {
-        // roomId found then send room
-        const room = await chatRoomsModel.create({ senderId, receiverId });
-        roomId = String(room._id);
-      } else {
+
+      if (roomFound) {
         roomId = String(roomFound._id);
+        const limit = body.limit || 10,
+          page = body.page || 1;
+        const offset = (page - 1) * limit;
+
+        const chats = await chatsModel
+          .find({
+            roomId: new Types.ObjectId(roomId),
+          })
+          .populate("senderId", "fullName image")
+          .skip(offset)
+          .limit(limit)
+          .sort({ _id: -1 });
+
+        socket.join(roomId);
+        const data = { roomId, chats, limit, page };
+        io.to(roomId).emit(
+          "roomJoin",
+          new SuccessSend(200, "Messages listing", data)
+        );
+      } else {
+        socket.emit("roomJoin", new SuccessSend(204, "No messages yet", null));
       }
-
-      const limit = body.limit || 10,
-        page = body.page || 1;
-      const offset = (page - 1) * limit;
-      const chats = await chatsModel
-        .find({
-          roomId: new Types.ObjectId(roomId),
-        })
-        .populate("senderId", "fullName image")
-        .skip(offset)
-        .limit(limit)
-        .sort({ _id: -1 });
-
-      //join room
-      socket.join(roomId);
-      const data = { roomId, chats, limit, page };
-      io.to(roomId).emit(
-        "roomJoin",
-        new SuccessSend(200, "messages listing", data)
-      );
     } catch (error) {
-      // io.emit("roomJoin", new ErrorSend(500, "Some Error occured", []));
       emitError("roomJoin", error, socket);
       console.log({ error });
     }
@@ -169,6 +220,15 @@ export const userHandler = async (io, socket) => {
       if (typeof body !== "object") body = JSON.parse(body);
       const { senderId, roomId, roomType, message, type } = body;
 
+      // Validate room existence
+      const roomExists = await chatRoomsModel.findById(roomId);
+      if (!roomExists) {
+        return socket.emit(
+          "message",
+          new ErrorSend(404, "Chat room does not exist", null)
+        );
+      }
+      
       const chat = await chatsModel.create({
         senderId,
         roomId,
