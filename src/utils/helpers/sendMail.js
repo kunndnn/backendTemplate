@@ -12,13 +12,13 @@ const { sendMail } = createTransport({
   },
 });
 
-export const sendMailToUser = (
+export const sendMailToUser = ({
   from = "sender@mailinator.com",
   to = "test@mailinator.com",
   subject = "Subject of E-mail",
   text = "body",
-  html = "<h1>Hello World Testing</>"
-) => {
+  html = "<h1>Hello World Testing</>",
+}) => {
   //setting credentials
   const mailOptions = {
     from, // Sender address

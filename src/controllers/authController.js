@@ -198,3 +198,7 @@ export const changePass = promiseHandler(async (req, res) => {
     .status(200)
     .json(new SuccessSend(200, "Password updated successfully", []));
 });
+
+export const testController = promiseHandler(async (req, res) =>
+  res.status(200).json(new SuccessSend(200, "message", {}))
+);

@@ -31,6 +31,14 @@ const io = new Server(httpServer, {
     methods: ["GET", "POST"], // Specify allowed HTTP methods
   },
 });
+
+// Store io in app locals to access in controllers
+app.locals.io = io;
+// use case
+// const io = req.app.locals.io;  // Get io instance from app.locals
+// io.emit("eventName", { message });
+
+
 // set middlewares
 app
   .use(json()) // to convert the body data in JSON

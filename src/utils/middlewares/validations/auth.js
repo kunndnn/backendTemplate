@@ -1,5 +1,5 @@
 import { body } from "express-validator";
-
+import Joi from "joi";
 export const loginValidations = [
   body("password").notEmpty().withMessage("Please enter password"),
   body("email").notEmpty().withMessage("Please enter email").escape().trim(),
@@ -18,3 +18,11 @@ export const signupValidations = [
       }
     }),
 ];
+
+//joi validations
+export const testValidations = Joi.object({
+  search: Joi.string()
+    .min(3)
+    .required()
+    .messages({ "string.min": "Please enter at least 3 characters" }),
+});

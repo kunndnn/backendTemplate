@@ -1,11 +1,12 @@
 import { Router } from "express";
 const router = Router();
-import { validationCheck } from "#middlewares/validationCheck";
+import { validationCheck, validateCheck } from "#middlewares/validationCheck";
 import { upload } from "#middlewares/fileUpload";
 import { verifyToken } from "#middlewares/verifyToken";
 import {
   loginValidations,
   signupValidations,
+  testValidations,
 } from "#middlewares/validations/auth";
 import {
   register,
@@ -15,6 +16,7 @@ import {
   profile,
   profileUpdate,
   changePass,
+  testController,
 } from "../controllers/authController.js";
 
 router.route("/register").post(upload.single("image"), register); // register
@@ -31,4 +33,5 @@ router
   .route("/change-password")
   .post(signupValidations, validationCheck, changePass); //change password
 
+router.route("/testing").get(validateCheck(testValidations), testController);
 export default router;

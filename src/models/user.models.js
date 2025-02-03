@@ -90,4 +90,9 @@ userSchema.methods.generateRefreshToken = function () {
   );
 };
 
+// virtual to get user details
+userSchema.virtual('detail').get(function () {
+  return `${this.firstName}'s mail is ${this.email}`;
+});
+
 export default model("User", userSchema);
