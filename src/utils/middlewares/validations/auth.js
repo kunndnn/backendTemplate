@@ -19,10 +19,12 @@ export const signupValidations = [
     }),
 ];
 
-//joi validations
-export const testValidations = Joi.object({
-  search: Joi.string()
-    .min(3)
-    .required()
-    .messages({ "string.min": "Please enter at least 3 characters" }),
-});
+export const testValidations = (req, res, next) => {
+  req.validations = Joi.object({
+    search: Joi.string()
+      .min(3)
+      .required()
+      .messages({ "string.min": "Please enter at least 3 characters" }),
+  });
+  next();
+};

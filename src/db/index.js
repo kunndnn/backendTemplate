@@ -1,6 +1,6 @@
 import { connect } from "mongoose";
 import { DB_NAME } from "../constants.js";
-import { createConnection } from "mysql";
+// import { createConnection } from "mysql";
 
 export const connectDB = async () => {
   try {
@@ -17,12 +17,12 @@ export const connectDB = async () => {
 };
 
 //mysql connection
-export const con = createConnection({
-  host: "localhost",
-  user: "root",
-  password: "",
-  database: "testing",
-});
+// export const con = createConnection({
+//   host: "localhost",
+//   user: "root",
+//   password: "",
+//   database: "testing",
+// });
 
 // con.connect(function (err) {
 //   if (err) throw err;

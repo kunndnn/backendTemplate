@@ -4,7 +4,7 @@ const sendResponse = async (res, success, data, message, statusCode) => {
 };
 
 class SuccessSend {
-  constructor(statusCode, message = "Success", data = []) {
+  constructor(statusCode, message = "Success", data = null) {
     this.success = statusCode < 400; // true
     this.statusCode = statusCode;
     this.message = message;
@@ -13,7 +13,7 @@ class SuccessSend {
 }
 
 class ErrorSend extends Error {
-  constructor(statusCode, message = "False", data = []) {
+  constructor(statusCode, message = "False", data = null) {
     super(message); // Call the Error constructor to set the message
     this.success = statusCode < 400; // false
     this.statusCode = statusCode;
@@ -21,6 +21,5 @@ class ErrorSend extends Error {
     this.data = data;
   }
 }
-
 
 export { sendResponse, SuccessSend, ErrorSend };

@@ -1,13 +1,13 @@
 import "dotenv/config";
 import mongoose from "mongoose";
 import { connectDB } from "../../db/index.js";
-import userModel from "#models/user";
+import userModel from "#models/user.models";
 
 connectDB()
   .then(async () => {
     await userModel.create({
       fullName: "test",
-      email: "test@demo.com",
+      email: "test2@demo.com",
       password: "P@ssw0rd",
     });
     await mongoose.connection.close();

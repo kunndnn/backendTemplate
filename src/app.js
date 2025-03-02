@@ -10,7 +10,7 @@ const { PORT, ENVIRONMENT } = process.env;
 // Choose HTTP or HTTPS server based on ENVIRONMENT
 let httpServer = createServer(app);
 
-if (ENVIRONMENT === "production") { 
+if (ENVIRONMENT === "production") {
   // Load SSL certificate and key
   const options = {
     key: fs.readFileSync(path.resolve("path/to/ssl/key.pem")),
@@ -37,7 +37,6 @@ app.locals.io = io;
 // use case
 // const io = req.app.locals.io;  // Get io instance from app.locals
 // io.emit("eventName", { message });
-
 
 // set middlewares
 app

@@ -21,17 +21,18 @@ import {
 
 router.route("/register").post(upload.single("image"), register); // register
 router.route("/login").post(loginValidations, validationCheck, login); // login
-router.route("/refresh-token").post(refreshAccessToken); // geenrate refresh token
+router.route("/refresh-token").post(refreshAccessToken); // generate refresh token
+
+router.route("/testing").get(testValidations, validateCheck, testController);
 
 router.use(verifyToken); // middleware to verify access token for the below routes
 router.route("/logout").post(logout); // logout
 router
   .route("/profile")
   .get(profile) // get profile
-  .post(upload.single("image"), profileUpdate); // get profile
+  .post(upload.single("image"), profileUpdate); // update profile
 router
   .route("/change-password")
   .post(signupValidations, validationCheck, changePass); //change password
 
-router.route("/testing").get(validateCheck(testValidations), testController);
 export default router;
