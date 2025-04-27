@@ -12,6 +12,79 @@ const emitError = (socketType = "error", err, socket, statusCode = 500) =>
     new ErrorSend(statusCode, "Error sending message", err.message)
   );
 
+const getChatsListing = async (
+  userObjId = new Types.ObjectId(String(userObjId)),
+  offset = 0,
+  limit = 10
+) => {
+  const chats = await chatRoomsModel.aggregate([
+    {
+      $match: {
+        $or: [{ senderId: userObjId }, { receiverId: userObjId }],
+      },
+    },
+    {
+      $lookup: {
+        from: "users", // name of the users collection
+        let: { senderId: "$senderId", receiverId: "$receiverId" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $cond: [
+                  { $ne: ["$$senderId", userObjId] },
+                  { $eq: ["$_id", "$$senderId"] },
+                  { $eq: ["$_id", "$$receiverId"] },
+                ],
+              },
+            },
+          },
+          {
+            $project: {
+              _id: 1,
+              fullName: 1, // assuming you want to get the fullName from the users collection
+              image: 1, // and image from the users collection
+              // Add other fields you want to project
+            },
+          },
+        ],
+        as: "userDetails",
+      },
+    },
+    { $unwind: "$userDetails" }, // Unwind the userDetails array
+    {
+      $lookup: {
+        from: "chats",
+        localField: "_id",
+        foreignField: "roomId",
+        as: "chatMessage",
+        // to apply conditions within the lookup
+        pipeline: [
+          { $sort: { createdAt: -1 } },
+          { $limit: 1 },
+          {
+            $project: {
+              _id: 1,
+              message: 1,
+              type: 1,
+              createdAt: {
+                $dateToString: {
+                  format: "%Y-%m-%d %H:%M:%S",
+                  date: "$createdAt",
+                },
+              }, // format the date
+            },
+          },
+        ],
+      },
+    },
+    { $unwind: "$chatMessage" },
+    { $skip: offset }, // skip users listing
+    { $limit: limit }, // limit per page users
+    { $sort: { _id: -1 } }, // sorting in descending order
+  ]);
+  return chats;
+};
 export const userHandler = async (io, socket) => {
   // socket.on("test", (data) => {
   //   io.emit("test", `hello ${data.name} !!!`);
@@ -33,75 +106,13 @@ export const userHandler = async (io, socket) => {
         page = body.page || 1;
       const offset = (page - 1) * limit;
 
-      const userObjId = new Types.ObjectId(String(userId));
-      const chats = await chatRoomsModel.aggregate([
-        {
-          $match: {
-            $or: [{ senderId: userObjId }, { receiverId: userObjId }],
-          },
-        },
-        {
-          $lookup: {
-            from: "users", // name of the users collection
-            let: { senderId: "$senderId", receiverId: "$receiverId" },
-            pipeline: [
-              {
-                $match: {
-                  $expr: {
-                    $cond: [
-                      { $ne: ["$$senderId", userObjId] },
-                      { $eq: ["$_id", "$$senderId"] },
-                      { $eq: ["$_id", "$$receiverId"] },
-                    ],
-                  },
-                },
-              },
-              {
-                $project: {
-                  _id: 1,
-                  fullName: 1, // assuming you want to get the fullName from the users collection
-                  image: 1, // and image from the users collection
-                  // Add other fields you want to project
-                },
-              },
-            ],
-            as: "userDetails",
-          },
-        },
-        { $unwind: "$userDetails" }, // Unwind the userDetails array
-        {
-          $lookup: {
-            from: "chats",
-            localField: "_id",
-            foreignField: "roomId",
-            as: "chatMessage",
-            // to apply conditions within the lookup
-            pipeline: [
-              { $sort: { createdAt: -1 } },
-              { $limit: 1 },
-              {
-                $project: {
-                  _id: 1,
-                  message: 1,
-                  type: 1,
-                  createdAt: {
-                    $dateToString: {
-                      format: "%Y-%m-%d %H:%M:%S",
-                      date: "$createdAt",
-                    },
-                  }, // format the date
-                },
-              },
-            ],
-          },
-        },
-        { $unwind: "$chatMessage" },
-        { $skip: offset }, // skip users listing
-        { $limit: limit }, // limit per page users
-        { $sort: { _id: -1 } }, // sorting in descending order
-      ]);
+      const chats = await getChatsListing(userId);
       const data = { chats, limit, page };
-      socket.emit("chatsListing", new SuccessSend(200, "chats listing", data));
+      socket.join(String(userId)); // join room
+      io.to(userId).emit(
+        "chatsListing",
+        new SuccessSend(200, "chats listing", data)
+      );
     } catch (error) {
       emitError("chatsListing", error, socket);
     }
@@ -228,7 +239,7 @@ export const userHandler = async (io, socket) => {
           new ErrorSend(404, "Chat room does not exist", null)
         );
       }
-      
+
       const chat = await chatsModel.create({
         senderId,
         roomId,
@@ -242,6 +253,14 @@ export const userHandler = async (io, socket) => {
       socket.join(room);
       // emit response
       io.to(room).emit("message", new SuccessSend(200, "message", chat));
+      let userId = String(roomExists.receiverId);
+      const chats = await getChatsListing(userId);
+      const data = { chats, limit: 0, page: 10 };
+      socket.join(userId); // join room
+      io.to(userId).emit(
+        "chatsListing",
+        new SuccessSend(200, "chats listing", data)
+      );
     } catch (error) {
       emitError("message", error, socket);
     }

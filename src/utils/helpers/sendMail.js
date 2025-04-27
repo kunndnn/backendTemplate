@@ -1,11 +1,17 @@
 import { createTransport } from "nodemailer";
-const { SMTPMAIL, SMTPPASS } = process.env;
+const {
+  MAIL_HOST,
+  MAIL_PORT,
+  MAIL_FROM: from,
+  SMTPMAIL,
+  SMTPPASS,
+} = process.env;
 
 //setting configurations
-const { sendMail } = createTransport({
-  host: "smtp.example.com", // Replace with your SMTP server
-  port: 587,
-  secure: false, // true for 465, false for other ports
+const transport = createTransport({
+  host: MAIL_HOST, // Replace with your SMTP server
+  port: MAIL_PORT, //587
+  secure: MAIL_PORT == 465, // true for 465, false for other ports
   auth: {
     user: SMTPMAIL, // Replace with your email
     pass: SMTPPASS, // Replace with your email password
@@ -13,11 +19,11 @@ const { sendMail } = createTransport({
 });
 
 export const sendMailToUser = ({
-  from = "sender@mailinator.com",
-  to = "test@mailinator.com",
+  to = "test@yopmail.com",
   subject = "Subject of E-mail",
   text = "body",
   html = "<h1>Hello World Testing</>",
+  attachments = [],
 }) => {
   //setting credentials
   const mailOptions = {
@@ -28,8 +34,11 @@ export const sendMailToUser = ({
     html, // HTML body
   };
 
+  // set attachments if any
+  if (attachments.length) mailOptions.attachments = attachments;
+
   // sending mail
-  sendMail(mailOptions, (error, info) => {
+  transport.sendMail(mailOptions, (error, info) => {
     if (error) {
       return console.log(error);
     }

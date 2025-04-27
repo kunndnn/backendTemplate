@@ -19,6 +19,8 @@ import {
   testController,
 } from "../controllers/authController.js";
 
+import { test } from "../controllers/testController.js";
+router.route("/test").get(test);
 router.route("/register").post(upload.single("image"), register); // register
 router.route("/login").post(loginValidations, validationCheck, login); // login
 router.route("/refresh-token").post(refreshAccessToken); // generate refresh token
