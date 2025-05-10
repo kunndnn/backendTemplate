@@ -1,6 +1,6 @@
 import { promiseHandler } from "#helpers/promiseHandler";
 import { SuccessSend, ErrorSend } from "#helpers/response";
-import { sendMailToUser } from "#helpers/sendMail";
+import { sendMailToUser } from "../utils/services/sendMail.js";
 export const test = promiseHandler(async (req, res) => {
   // return res.send('boom')
   const attachments = [

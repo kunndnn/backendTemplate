@@ -25,9 +25,8 @@ const generateTokens = async (userId) => {
 
 export const register = promiseHandler(async (req, res) => {
   const userData = req.body;
-  if (req.file) {
-    userData.image = req.file.filename;
-  }
+  if (req.file) userData.image = req.file.filename;
+
   const user = await userModel.create(userData),
     accessToken = user.generateAccessToken(),
     refreshToken = user.generateRefreshToken();
@@ -49,14 +48,10 @@ export const login = promiseHandler(async (req, res) => {
   const { email, password } = req.body;
   const user = await userModel.findOne({ email });
 
-  if (!user) {
-    throw new ErrorSend(403, "User not found", []);
-  }
+  if (!user) throw new ErrorSend(403, "User not found", []);
 
   const isPasswordValid = await user.isPasswordCorrect(password);
-  if (!isPasswordValid) {
-    throw new ErrorSend(401, "Invalid credentials", []);
-  }
+  if (!isPasswordValid) throw new ErrorSend(401, "Invalid credentials", []);
 
   const [{ accessToken, refreshToken }, loggedInUser] = await Promise.all([
     generateTokens(user._id),
@@ -76,12 +71,40 @@ export const login = promiseHandler(async (req, res) => {
     );
 });
 
+export const socialLogin = promiseHandler(async (req, res) => {
+  const userData = req.body;
+  const { email, socialId } = userData;
+  const userExist = userModel.find({ email });
+  let accessToken, refreshToken;
+
+  if (userExist) {
+    const tokens = generateTokens(userExist._id);
+    accessToken = tokens.accessToken;
+    refreshToken = tokens.refreshtoken;
+  } else {
+    userData.password = socialId;
+    const user = await userModel.create(userData);
+    accessToken = user.generateAccessToken();
+    refreshToken = user.generateRefreshToken();
+  }
+
+  res
+    .status(200)
+    .cookie("accessToken", accessToken)
+    .cookie("refreshToken", refreshToken)
+    .json(
+      new SuccessSend(201, "User Login Successfully", {
+        user,
+        accessToken,
+        refreshToken,
+      })
+    );
+});
+
 export const refreshAccessToken = promiseHandler(async (req, res) => {
   const { refreshToken: userRefreshToken } = req.cookies || req.body;
 
-  if (!userRefreshToken) {
-    throw new ErrorSend(401, "Unauthorized request");
-  }
+  if (!userRefreshToken) throw new ErrorSend(401, "Unauthorized request");
 
   const decoded = jwt.verify(
     userRefreshToken,
@@ -89,13 +112,10 @@ export const refreshAccessToken = promiseHandler(async (req, res) => {
   );
 
   const user = await userModel.findById(decoded?._id);
-  if (!user) {
-    throw new ErrorSend(401, "Invalid refresh token");
-  }
+  if (!user) throw new ErrorSend(401, "Invalid refresh token");
 
-  if (userRefreshToken !== user?.refreshToken) {
+  if (userRefreshToken !== user?.refreshToken)
     throw new ErrorSend(401, "Refrresh token expired");
-  }
 
   const { accessToken, refreshToken } = await generateTokens(user._id);
 
@@ -126,61 +146,58 @@ export const logout = promiseHandler(async (req, res) => {
 });
 
 export const profile = promiseHandler(async (req, res) => {
-  // const user = await userModel
-  //   .findById(req.user._id)
-  //   .select("-password -refreshToken");
   const userId = String(req.user._id); // Ensure it's converted to string
-  const user = await userModel.aggregate([
-    { $match: { _id: new Types.ObjectId(userId) } },
-    {
-      $project: {
-        _id: 1,
-        fullName: 1,
-        email: 1,
-        image: { $ifNull: ["$image", ""] },
-        imagePath: `${req.protocol}://${req.get("host")}/temp/`,
-        createdAt: 1,
-        updatedAt: 1,
+  if (req.method === "GET") {
+    const user = await userModel.aggregate([
+      { $match: { _id: new Types.ObjectId(userId) } },
+      {
+        $project: {
+          _id: 1,
+          fullName: 1,
+          email: 1,
+          image: { $ifNull: ["$image", ""] },
+          imagePath: `${req.protocol}://${req.get("host")}/temp/`,
+          createdAt: 1,
+          updatedAt: 1,
+        },
       },
-    },
-  ]);
-  res
-    .status(200)
-    .json(new SuccessSend(200, "User profile fetched successfully", user));
-});
+    ]);
+    return res
+      .status(200)
+      .json(new SuccessSend(200, "User profile fetched successfully", user));
+  } else if (req.method === "POST") {
+    const userData = req.body;
 
-export const profileUpdate = promiseHandler(async (req, res) => {
-  const userData = req.body;
+    const existingUser = await userModel.findById(userId);
+    if (!existingUser) throw new ErrorSend(404, "User not found", []);
 
-  const existingUser = await userModel.findById(req.user._id);
-  if (!existingUser) {
-    return res.status(404).json(new ErrorSend(404, "User not found"));
-  }
-
-  if (req.file) {
-    userData.image = req.file.filename;
-    // If the existing user has an image, delete the old image file
-    if (existingUser.image) {
-      // const oldImagePath = path.join(__dirname,"../../public/temp",existingUser.image);
-      const oldImagePath = path.join(
-        process.cwd(),
-        "public/temp",
-        existingUser.image
-      );
-      await fs.unlink(oldImagePath);
+    if (req.file) {
+      userData.image = req.file.filename;
+      // If the existing user has an image, delete the old image file
+      if (existingUser.image) {
+        // const oldImagePath = path.join(__dirname,"../../public/temp",existingUser.image);
+        const oldImagePath = path.join(
+          process.cwd(),
+          "public/temp",
+          existingUser.image
+        );
+        await fs.unlink(oldImagePath);
+      }
+    } else {
+      userData.image = existingUser.image;
     }
-  } else {
-    userData.image = existingUser.image;
-  }
 
-  const user = await userModel
-    .findByIdAndUpdate(req.user._id, userData, {
-      new: true,
-    })
-    .select("-password -createdAt -updatedAt");
-  res
-    .status(200)
-    .json(new SuccessSend(200, "Profile updated successfully", user));
+    const user = await userModel
+      .findByIdAndUpdate(req.user._id, userData, {
+        new: true,
+      })
+      .select("-password -createdAt -updatedAt");
+    return res
+      .status(200)
+      .json(new SuccessSend(200, "Profile updated successfully", user));
+  } else {
+    throw new ErrorSend(405, "Method Not Allowed");
+  }
 });
 
 export const changePass = promiseHandler(async (req, res) => {
@@ -189,8 +206,7 @@ export const changePass = promiseHandler(async (req, res) => {
   const user = await userModel.findById(req.user?._id);
   const isPasswordCorrect = await user.isPasswordCorrect(password);
 
-  if (!isPasswordCorrect)
-    return res.status(422).json(new ErrorSend(422, "Old password Incorrect"));
+  if (!isPasswordCorrect) throw new ErrorSend(422, "Old password incorrect");
 
   user.password = newPassword;
   await user.save({ validateBeforeSave: false });
@@ -198,7 +214,3 @@ export const changePass = promiseHandler(async (req, res) => {
     .status(200)
     .json(new SuccessSend(200, "Password updated successfully", []));
 });
-
-export const testController = promiseHandler(async (req, res) =>
-  res.status(200).json(new SuccessSend(200, "message", {}))
-);

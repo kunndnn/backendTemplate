@@ -23,6 +23,15 @@ const userSchema = new Schema(
       lowecase: true,
       trim: true,
     },
+    socialId: {
+      type: String,
+      default: null,
+    },
+    socialType: {
+      type: String,
+      enum: ["google", "apple"],
+      default: null,
+    },
     image: {
       type: String,
       default: null,
@@ -91,7 +100,7 @@ userSchema.methods.generateRefreshToken = function () {
 };
 
 // virtual to get user details
-userSchema.virtual('detail').get(function () {
+userSchema.virtual("detail").get(function () {
   return `${this.firstName}'s mail is ${this.email}`;
 });
 

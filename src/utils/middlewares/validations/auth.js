@@ -19,6 +19,16 @@ export const signupValidations = [
     }),
 ];
 
+export const socialLoginValidations = (req, res, next) => {
+  req.validations = Joi.object({
+    fullName: Joi.string().required(),
+    email: Joi.string().required(),
+    socialId: Joi.string().required(),
+    socialType: Joi.string().valid(Joi.in("google", "apple")),
+  });
+  next();
+};
+
 export const testValidations = (req, res, next) => {
   req.validations = Joi.object({
     search: Joi.string()

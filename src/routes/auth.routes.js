@@ -6,33 +6,36 @@ import { verifyToken } from "#middlewares/verifyToken";
 import {
   loginValidations,
   signupValidations,
+  socialLoginValidations,
   testValidations,
 } from "#middlewares/validations/auth";
+
 import {
   register,
   login,
+  socialLogin,
   refreshAccessToken,
   logout,
   profile,
-  profileUpdate,
   changePass,
-  testController,
 } from "../controllers/authController.js";
 
 import { test } from "../controllers/testController.js";
-router.route("/test").get(test);
+
+router.route("/test").get(testValidations, validateCheck, test);
 router.route("/register").post(upload.single("image"), register); // register
 router.route("/login").post(loginValidations, validationCheck, login); // login
+router
+  .route("/social-login")
+  .post(socialLoginValidations, validateCheck, socialLogin); // social login
 router.route("/refresh-token").post(refreshAccessToken); // generate refresh token
-
-router.route("/testing").get(testValidations, validateCheck, testController);
 
 router.use(verifyToken); // middleware to verify access token for the below routes
 router.route("/logout").post(logout); // logout
 router
   .route("/profile")
   .get(profile) // get profile
-  .post(upload.single("image"), profileUpdate); // update profile
+  .post(upload.single("image"), profile); // update profile
 router
   .route("/change-password")
   .post(signupValidations, validationCheck, changePass); //change password

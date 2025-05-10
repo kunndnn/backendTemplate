@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { connectDB } from "./db/index.js";
+import { connectDB } from "./utils/services/db/connection.js";
 import { httpServer } from "./app.js";
 const { PORT } = process.env || 3001;
 
