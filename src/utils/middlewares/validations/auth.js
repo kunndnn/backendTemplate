@@ -24,7 +24,8 @@ export const socialLoginValidations = (req, res, next) => {
     fullName: Joi.string().required(),
     email: Joi.string().required(),
     socialId: Joi.string().required(),
-    socialType: Joi.string().valid(Joi.in("google", "apple")),
+    socialType: Joi.string().valid("google", "apple").required(),
+    image: Joi.string().optional(),
   });
   next();
 };

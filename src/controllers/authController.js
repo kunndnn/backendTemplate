@@ -2,10 +2,10 @@ import { promiseHandler } from "#helpers/promiseHandler";
 import { SuccessSend, ErrorSend } from "#helpers/response";
 import userModel from "#models/user.models";
 import jwt from "jsonwebtoken";
-import { Types } from "mongoose";
 import { promises as fs } from "fs"; // Correct import for fs.promises
+import fss from "fs";
 import path from "path";
-
+const { BASE_URL } = process.env;
 const generateTokens = async (userId) => {
   try {
     const user = await userModel.findById(userId),
@@ -25,7 +25,10 @@ const generateTokens = async (userId) => {
 
 export const register = promiseHandler(async (req, res) => {
   const userData = req.body;
-  if (req.file) userData.image = req.file.filename;
+  if (req.file) {
+    const image = `${BASE_URL}/${req?.file?.path?.split("public")[1]}`;
+    userData.image = image;
+  }
 
   const user = await userModel.create(userData),
     accessToken = user.generateAccessToken(),
@@ -73,19 +76,27 @@ export const login = promiseHandler(async (req, res) => {
 
 export const socialLogin = promiseHandler(async (req, res) => {
   const userData = req.body;
-  const { email, socialId } = userData;
-  const userExist = userModel.find({ email });
-  let accessToken, refreshToken;
+  const { email, socialId, socialType, image } = userData;
+  const userExist = await userModel.findOne({ email });
+  let accessToken, refreshToken, user;
 
   if (userExist) {
-    const tokens = generateTokens(userExist._id);
+    const tokens = await generateTokens(userExist._id);
     accessToken = tokens.accessToken;
-    refreshToken = tokens.refreshtoken;
+    refreshToken = tokens.refreshToken;
+
+    //update the data
+    userExist.socialId = socialId;
+    userExist.socialType = socialType;
+    if (image) userExist.image = image;
+    userExist.save();
+    user = userExist;
   } else {
     userData.password = socialId;
-    const user = await userModel.create(userData);
-    accessToken = user.generateAccessToken();
-    refreshToken = user.generateRefreshToken();
+    const userCreate = await userModel.create(userData).select("fullName");
+    accessToken = userCreate.generateAccessToken();
+    refreshToken = userCreate.generateRefreshToken();
+    user = userCreate;
   }
 
   res
@@ -148,20 +159,20 @@ export const logout = promiseHandler(async (req, res) => {
 export const profile = promiseHandler(async (req, res) => {
   const userId = String(req.user._id); // Ensure it's converted to string
   if (req.method === "GET") {
-    const user = await userModel.aggregate([
-      { $match: { _id: new Types.ObjectId(userId) } },
-      {
-        $project: {
-          _id: 1,
-          fullName: 1,
-          email: 1,
-          image: { $ifNull: ["$image", ""] },
-          imagePath: `${req.protocol}://${req.get("host")}/temp/`,
-          createdAt: 1,
-          updatedAt: 1,
-        },
-      },
-    ]);
+    const user = await userModel.findById(userId);
+    // const user = await userModel.aggregate([
+    //   { $match: { _id: new Types.ObjectId(userId) } },
+    //   {
+    //     $project: {
+    //       _id: 1,
+    //       fullName: 1,
+    //       email: 1,
+    //       image: 1,
+    //       createdAt: 1,
+    //       updatedAt: 1,
+    //     },
+    //   },
+    // ]);
     return res
       .status(200)
       .json(new SuccessSend(200, "User profile fetched successfully", user));
@@ -172,16 +183,18 @@ export const profile = promiseHandler(async (req, res) => {
     if (!existingUser) throw new ErrorSend(404, "User not found", []);
 
     if (req.file) {
-      userData.image = req.file.filename;
+      const image = `${BASE_URL}/${req?.file?.path?.split("public")[1]}`;
+
+      userData.image = image;
       // If the existing user has an image, delete the old image file
       if (existingUser.image) {
-        // const oldImagePath = path.join(__dirname,"../../public/temp",existingUser.image);
         const oldImagePath = path.join(
           process.cwd(),
-          "public/temp",
-          existingUser.image
+          "public/",
+          existingUser?.image?.split(BASE_URL)[1]
         );
-        await fs.unlink(oldImagePath);
+
+        if (fss.existsSync(oldImagePath)) await fs.unlink(oldImagePath);
       }
     } else {
       userData.image = existingUser.image;

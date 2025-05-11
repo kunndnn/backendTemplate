@@ -54,7 +54,7 @@ app.get("/boom", (req, res) => {
 // import routes
 import auth from "./routes/auth.routes.js";
 // use routes
-app.use("/api/v1/auth", auth);
+app.use("/api/v1", auth);
 
 //error handler middleware
 import errorHandler from "#middlewares/errorHandler";

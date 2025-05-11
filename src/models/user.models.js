@@ -1,7 +1,7 @@
 import { Schema, model } from "mongoose";
 import jwt from "jsonwebtoken";
 import { hash, genSalt, compare } from "bcrypt";
-
+const { BASE_URL } = process.env;
 const userSchema = new Schema(
   {
     fullName: {
@@ -48,6 +48,7 @@ const userSchema = new Schema(
     password: {
       type: String,
       required: [true, "Password is required"],
+      select: false,
     },
     refreshToken: {
       type: String,
@@ -101,7 +102,7 @@ userSchema.methods.generateRefreshToken = function () {
 
 // virtual to get user details
 userSchema.virtual("detail").get(function () {
-  return `${this.firstName}'s mail is ${this.email}`;
+  return `${this.fullName}'s mail is ${this.email}`;
 });
 
 export default model("User", userSchema);
