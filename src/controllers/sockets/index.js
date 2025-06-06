@@ -2,6 +2,7 @@ import { Types } from "mongoose";
 import chatRoomsModel from "#models/chatRooms.models";
 import chatsModel from "#models/chats.models";
 import userModels from "#models/user.models";
+import deleteChatModels from "#models/deleteChat.models";
 import pinnedChatsModels from "#models/pinnedChats.models";
 import { SuccessSend, ErrorSend } from "#helpers/response";
 
@@ -17,6 +18,7 @@ const getChatsListing = async (
   offset = 0,
   limit = 10
 ) => {
+  // console.log({ userObjId });
   const chats = await chatRoomsModel.aggregate([
     {
       $match: {
@@ -85,6 +87,7 @@ const getChatsListing = async (
   ]);
   return chats;
 };
+
 export const userHandler = async (io, socket) => {
   // socket.on("test", (data) => {
   //   io.emit("test", `hello ${data.name} !!!`);
@@ -101,12 +104,12 @@ export const userHandler = async (io, socket) => {
       */
     try {
       if (typeof body !== "object") body = JSON.parse(body);
-      const { userId } = body;
-      const limit = body.limit || 10,
-        page = body.page || 1;
+      const { userId, limit = 10, page = 1 } = body;
       const offset = (page - 1) * limit;
 
-      const chats = await getChatsListing(userId);
+      const chats = await getChatsListing(userId, offset, limit);
+      // console.log({ chats });
+      // return socket.emit("chatsListing", chats);
       const data = { chats, limit, page };
       socket.join(String(userId)); // join room
       io.to(userId).emit(
@@ -176,8 +179,9 @@ export const userHandler = async (io, socket) => {
   socket.on("roomJoin", async (body) => {
     try {
       if (typeof body !== "object") body = JSON.parse(body); // convert to JSON
-      const { senderId, receiverId } = body;
+      const { senderId, receiverId, limit = 10, page = 1 } = body;
       let roomId;
+      // check if room exist or not
       const roomFound = await chatRoomsModel.findOne({
         $or: [
           {
@@ -195,30 +199,49 @@ export const userHandler = async (io, socket) => {
         ],
       });
 
-      if (roomFound) {
-        roomId = String(roomFound._id);
-        const limit = body.limit || 10,
-          page = body.page || 1;
-        const offset = (page - 1) * limit;
-
-        const chats = await chatsModel
-          .find({
-            roomId: new Types.ObjectId(roomId),
-          })
-          .populate("senderId", "fullName image")
-          .skip(offset)
-          .limit(limit)
-          .sort({ _id: -1 });
-
-        socket.join(roomId);
-        const data = { roomId, chats, limit, page };
-        io.to(roomId).emit(
+      // if room not exist then send response
+      if (!roomFound) {
+        return socket.emit(
           "roomJoin",
-          new SuccessSend(200, "Messages listing", data)
+          new SuccessSend(204, "No messages yet", null)
         );
-      } else {
-        socket.emit("roomJoin", new SuccessSend(204, "No messages yet", null));
       }
+
+      roomId = String(roomFound._id);
+      const deleteDate = await deleteChatModels
+        .findOne({
+          $and: [
+            { userId: new Types.ObjectId(String(senderId)) },
+            { roomId: new Types.ObjectId(String(roomId)) },
+          ],
+        })
+        .sort({ _id: -1 });
+      const offset = (page - 1) * limit;
+
+      let filter = { roomId: new Types.ObjectId(roomId) };
+      if (deleteDate) {
+        filter = {
+          $and: [
+            { roomId: new Types.ObjectId(String(roomId)) },
+            { createdAt: { $gt: new Date(deleteDate.createdAt) } },
+          ],
+        };
+      }
+
+      //show chats after deleted date
+      const chats = await chatsModel
+        .find(filter)
+        .populate("senderId", "fullName image") // get only mention fields
+        .skip(offset)
+        .limit(limit)
+        .sort({ _id: -1 });
+
+      socket.join(roomId);
+      const data = { roomId, chats, limit, page };
+      io.to(roomId).emit(
+        "roomJoin",
+        new SuccessSend(200, "Messages listing", data)
+      );
     } catch (error) {
       emitError("roomJoin", error, socket);
       console.log({ error });
@@ -424,6 +447,7 @@ export const userHandler = async (io, socket) => {
     }
   });
 
+  //search messages
   socket.on("searchedMsg", async (body) => {
     /*
     {
@@ -506,6 +530,19 @@ export const userHandler = async (io, socket) => {
     } catch (error) {
       console.log({ error });
       emitError("searchedMsg", error, socket);
+    }
+  });
+
+  //delete chat for the self
+  socket.on("deleteChat", async (body) => {
+    try {
+      if (typeof body !== "object") body = JSON.parse(body);
+      const { userId, roomId } = body;
+      await deleteChatModels.create({ userId, roomId });
+      socket.emit("deleteChat", new SuccessSend(200, "chat deleted"));
+    } catch (error) {
+      console.log({ error });
+      emitError("deleteChat", error, socket);
     }
   });
 

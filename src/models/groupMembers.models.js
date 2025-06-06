@@ -1,7 +1,7 @@
 import { Schema, model } from "mongoose";
 const { ObjectId } = Schema.Types;
 
-const groupMembers = new Schema(
+const groupMember = new Schema(
   {
     groupId: {
       type: ObjectId,
@@ -11,10 +11,10 @@ const groupMembers = new Schema(
     userId: {
       type: ObjectId,
       required: [true, "User id is required"],
-      ref: "users",
+      ref: "user",
     },
   },
   { timestamps: true }
 );
 
-export default model("groupMembers", groupMembers);
+export default model("groupMember", groupMember);

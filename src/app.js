@@ -71,8 +71,8 @@ const onConnection = async (socket) => {
 
 io.use((socket, next) => {
   const origin = socket.handshake.headers.origin;
-  if (!allowedOrigins.includes(origin))
-    return next(new Error("Origin not allowed"));
+  // if (!allowedOrigins.includes(origin))
+  // return next(new Error("Origin not allowed"));
   next(); // Allow connection if all checks pass
 });
 

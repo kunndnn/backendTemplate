@@ -105,4 +105,4 @@ userSchema.virtual("detail").get(function () {
   return `${this.fullName}'s mail is ${this.email}`;
 });
 
-export default model("User", userSchema);
+export default model("user", userSchema);

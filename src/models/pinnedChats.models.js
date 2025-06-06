@@ -20,4 +20,4 @@ const pinnedSchema = new Schema(
   { timestamps: true }
 );
 
-export default model("PinnedChat", pinnedSchema);
+export default model("pinnedChat", pinnedSchema);

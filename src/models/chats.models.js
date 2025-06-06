@@ -1,18 +1,18 @@
 import { Schema, model } from "mongoose";
 const { ObjectId } = Schema.Types;
-const chats = new Schema(
+const chat = new Schema(
   {
     senderId: {
       //msg sent by
       type: ObjectId,
       required: [true, "senderId is required"],
-      ref: "User",
+      ref: "user",
     },
     roomId: {
       // room Id
       type: ObjectId,
       required: [true, "roomId is required"],
-      ref: "ChatRooms",
+      ref: "chatRooms",
     },
     roomType: {
       // single chat || group chat
@@ -39,4 +39,4 @@ const chats = new Schema(
   { timestamps: true }
 );
 
-export default model("Chats", chats);
+export default model("chat", chat);
