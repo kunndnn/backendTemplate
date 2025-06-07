@@ -5,14 +5,15 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "dev": "nodemon src/index.js",
+    "dev": "node --watch src/index.js",
     "start": "node src/index.js",
     "seed": "node src/utils/helpers/seeder.js"
   },
   "imports": {
     "#models/*": "./src/models/*.js",
     "#helpers/*": "./src/utils/helpers/*.js",
-    "#middlewares/*": "./src/utils/middlewares/*.js"
+    "#middlewares/*": "./src/utils/middlewares/*.js",
+    "#services/*": "./src/utils/services/*.js"
   },
   "keywords": [],
   "author": "",
@@ -21,6 +22,7 @@
     "bcrypt": "^5.1.1",
     "cookie-parser": "^1.4.6",
     "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
     "express": "^4.19.2",
     "express-validator": "^7.2.1",
     "joi": "^17.13.3",

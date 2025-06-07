@@ -1,4 +1,11 @@
 import { createTransport } from "nodemailer";
+import ejs from "ejs";
+import path from "path";
+import { fileURLToPath } from "url";
+// Required to resolve __dirname in ES module
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const {
   MAIL_HOST,
   MAIL_PORT,
@@ -18,30 +25,38 @@ const transport = createTransport({
   },
 });
 
-export const sendMailToUser = ({
+export const sendMailToUser = async ({
   to = "test@yopmail.com",
   subject = "Subject of E-mail",
-  text = "body",
-  html = "<h1>Hello World Testing</>",
+  text,
+  html,
+  templateData = {},
   attachments = [],
 }) => {
-  //setting credentials
-  const mailOptions = {
-    from, // Sender address
-    to, // List of recipients
-    subject, // Subject line
-    text, // Plain text body
-    html, // HTML body
-  };
+  try {
+    //setting credentials
+    let mailOptions = {
+      from, // Sender address
+      to, // List of recipients
+      subject, // Subject line
+    };
 
-  // set attachments if any
-  if (attachments.length) mailOptions.attachments = attachments;
-
-  // sending mail
-  transport.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      return console.log(error);
+    if (text) mailOptions.text = text;
+    if (attachments.length) mailOptions.attachments = attachments;
+    if (html) {
+      const templatePath = path.join(
+        process.cwd(),
+        "src",
+        "views/emails",
+        html
+      );
+      mailOptions.html = await ejs.renderFile(templatePath, templateData);
     }
+
+    // sending mail
+    const info = await transport.sendMail(mailOptions);
     console.log("Message sent: %s", info.messageId);
-  });
+  } catch (error) {
+    console.error("Mail send error:", error);
+  }
 };

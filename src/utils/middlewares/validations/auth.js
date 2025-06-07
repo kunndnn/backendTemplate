@@ -39,3 +39,26 @@ export const testValidations = (req, res, next) => {
   });
   next();
 };
+
+export const forgetPassValids = (req, res, next) => {
+  req.validations = Joi.object({
+    email: Joi.string().email().required(),
+  });
+  next();
+};
+
+export const verifyOtpValids = (req, res, next) => {
+  req.validations = Joi.object({
+    email: Joi.string().email().required(),
+    otp: Joi.string().required(),
+  });
+  next();
+};
+
+export const resetPassValids = (req, res, next) => {
+  req.validations = Joi.object({
+    email: Joi.string().email().required(),
+    password: Joi.string().required(),
+  });
+  next();
+};

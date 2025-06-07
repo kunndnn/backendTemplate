@@ -8,12 +8,18 @@ import {
   signupValidations,
   socialLoginValidations,
   testValidations,
+  forgetPassValids,
+  verifyOtpValids,
+  resetPassValids,
 } from "#middlewares/validations/auth";
 
 import {
   register,
   login,
   socialLogin,
+  forgotPassword,
+  verifyOTP,
+  resetPassword,
   refreshAccessToken,
   logout,
   profile,
@@ -28,6 +34,15 @@ router.route("/login").post(loginValidations, validationCheck, login); // login
 router
   .route("/social-login")
   .post(socialLoginValidations, validateCheck, socialLogin); // social login
+
+router
+  .route("/forgot-password")
+  .post(forgetPassValids, validateCheck, forgotPassword);
+router.route("/verify-otp").post(verifyOtpValids, validateCheck, verifyOTP);
+router
+  .route("/reset-password")
+  .post(resetPassValids, validateCheck, resetPassword);
+
 router.route("/refresh-token").post(refreshAccessToken); // generate refresh token
 
 router.use(verifyToken); // middleware to verify access token for the below routes

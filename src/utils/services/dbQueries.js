@@ -1,0 +1,122 @@
+import { Types } from "mongoose";
+const { ObjectId } = Types;
+import chatRoomsModel from "#models/chatRooms.models";
+
+export const getChatsListing = async (userObjId, offset = 0, limit = 10) => {
+  userObjId = new ObjectId(String(userObjId));
+
+  const chats = await chatRoomsModel.aggregate([
+    {
+      $match: {
+        $or: [{ senderId: userObjId }, { receiverId: userObjId }],
+      },
+    },
+    // STEP 1: Lookup delete timestamp if exists
+    {
+      $lookup: {
+        from: "deletechats", // collection name
+        let: { roomId: "$_id" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$roomId", "$$roomId"] },
+                  { $eq: ["$userId", userObjId] },
+                ],
+              },
+            },
+          },
+          { $sort: { _id: -1 } }, // in case multiple delete records exist
+          { $limit: 1 },
+        ],
+        as: "deletionInfo",
+      },
+    },
+    {
+      $addFields: {
+        deletionTimestamp: {
+          $arrayElemAt: ["$deletionInfo.createdAt", 0],
+        },
+      },
+    },
+
+    // STEP 2: Lookup the latest message after deletion timestamp
+    {
+      $lookup: {
+        from: "chats",
+        let: {
+          roomId: "$_id",
+          deletedAt: "$deletionTimestamp",
+        },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$roomId", "$$roomId"] },
+                  {
+                    $cond: [
+                      { $ifNull: ["$$deletedAt", false] },
+                      { $gt: ["$createdAt", "$$deletedAt"] },
+                      true,
+                    ],
+                  },
+                ],
+              },
+            },
+          },
+          { $sort: { createdAt: -1 } },
+          { $limit: 1 },
+          {
+            $project: {
+              _id: 1,
+              message: 1,
+              type: 1,
+              createdAt: 1,
+            },
+          },
+        ],
+        as: "chatMessage",
+      },
+    },
+    { $unwind: "$chatMessage" },
+
+    // STEP 3: Lookup user details (same as before)
+    {
+      $lookup: {
+        from: "users",
+        let: { senderId: "$senderId", receiverId: "$receiverId" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $cond: [
+                  { $ne: ["$$senderId", userObjId] },
+                  { $eq: ["$_id", "$$senderId"] },
+                  { $eq: ["$_id", "$$receiverId"] },
+                ],
+              },
+            },
+          },
+          {
+            $project: {
+              _id: 1,
+              fullName: 1,
+              image: 1,
+            },
+          },
+        ],
+        as: "userDetails",
+      },
+    },
+    { $unwind: "$userDetails" },
+
+    // FINAL STEPS: pagination & sorting
+    { $sort: { "chatMessage.createdAt": -1 } },
+    { $skip: offset },
+    { $limit: limit },
+  ]);
+
+  return chats;
+};

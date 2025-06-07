@@ -1,10 +1,13 @@
 import { promiseHandler } from "#helpers/promiseHandler";
 import { SuccessSend, ErrorSend } from "#helpers/response";
 import userModel from "#models/user.models";
+import otpModel from "#models/otp.models";
 import jwt from "jsonwebtoken";
 import { promises as fs } from "fs"; // Correct import for fs.promises
 import fss from "fs";
 import path from "path";
+import { generateOtp } from "#helpers/common";
+import { sendMailToUser } from "#services/sendMail";
 const { BASE_URL } = process.env;
 const generateTokens = async (userId) => {
   try {
@@ -49,7 +52,7 @@ export const register = promiseHandler(async (req, res) => {
 
 export const login = promiseHandler(async (req, res) => {
   const { email, password } = req.body;
-  const user = await userModel.findOne({ email });
+  const user = await userModel.findOne({ email }).select("+password");
 
   if (!user) throw new ErrorSend(403, "User not found", []);
 
@@ -112,6 +115,42 @@ export const socialLogin = promiseHandler(async (req, res) => {
     );
 });
 
+export const forgotPassword = promiseHandler(async (req, res) => {
+  const { email } = req.body;
+  const userExist = await userModel.findOne({ email });
+  if (!userExist) throw "Email does not exist";
+  const code = generateOtp();
+  await otpModel.create({ email, code });
+  await sendMailToUser({
+    to: email,
+    subject: "Forgot Password OTP!",
+    html: "template.ejs",
+    templateData: {
+      email,
+      otp: code,
+    },
+  });
+  res.status(200).json(new SuccessSend(200, "OTP sent to the email"));
+});
+
+export const verifyOTP = promiseHandler(async (req, res) => {
+  const { email, otp } = req.body;
+  const matchOTP = await otpModel
+    .findOneAndDelete({ email, code: otp })
+    .sort({ createdAt: -1 });
+  if (!matchOTP) throw "Invalid or Expired OTP";
+  res.status(200).json(new SuccessSend(200, "OTP matched successfully"));
+});
+
+export const resetPassword = promiseHandler(async (req, res) => {
+  const { email, password } = req.body;
+  const user = await userModel.findOne({ email });
+  if (!user) throw "Email not exist";
+  user.password = password;
+  await user.save({ validateBeforeSave: false });
+  res.status(200).json(new SuccessSend(200, "Password reset successfully"));
+});
+
 export const refreshAccessToken = promiseHandler(async (req, res) => {
   const { refreshToken: userRefreshToken } = req.cookies || req.body;
 
@@ -160,19 +199,6 @@ export const profile = promiseHandler(async (req, res) => {
   const userId = String(req.user._id); // Ensure it's converted to string
   if (req.method === "GET") {
     const user = await userModel.findById(userId);
-    // const user = await userModel.aggregate([
-    //   { $match: { _id: new Types.ObjectId(userId) } },
-    //   {
-    //     $project: {
-    //       _id: 1,
-    //       fullName: 1,
-    //       email: 1,
-    //       image: 1,
-    //       createdAt: 1,
-    //       updatedAt: 1,
-    //     },
-    //   },
-    // ]);
     return res
       .status(200)
       .json(new SuccessSend(200, "User profile fetched successfully", user));

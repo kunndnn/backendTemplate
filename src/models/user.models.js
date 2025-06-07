@@ -69,8 +69,10 @@ userSchema.pre("save", async function (next) {
 
 // method to check if password matched or not
 userSchema.methods.isPasswordCorrect = async function (password) {
+  if (!password || !this.password) return false;
   return await compare(password, this.password);
 };
+
 
 // method to generate access token
 userSchema.methods.generateAccessToken = function () {

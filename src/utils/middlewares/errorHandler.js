@@ -1,17 +1,11 @@
 import logger from "#helpers/logger";
 import { ErrorSend } from "#helpers/response";
+import deleteFile from "#services/deleteFile";
 import mongoose from "mongoose";
-import { existsSync, unlinkSync } from "fs";
 import path from "path";
-
 export default (err, req, res, next) => {
   let statusCode = 500;
   let message = "Internal Server Error";
-
-  //delete file function
-  const deleteFile = (filePath) => {
-    if (existsSync(filePath)) unlinkSync(filePath);
-  };
 
   if (req?.file) {
     // if has single file then delete it
@@ -34,6 +28,8 @@ export default (err, req, res, next) => {
     // Check if the error is an instance of ErrorSend
     statusCode = err.statusCode;
     message = err.message;
+  } else if (typeof err === "string") {
+    message = err;
   }
   // Handle other errors (e.g., Mongoose, ValidationError, etc.)
   else if (err instanceof mongoose.Error.ValidationError) {
@@ -58,13 +54,13 @@ export default (err, req, res, next) => {
     statusCode = 401;
     message = "Invalid token";
   } else {
-    message = err.message || message;
+    message = err.message ?? message;
   }
 
   // Log the error for debugging
   console.error({ err });
   logger.error(
-    `${err.status || 500} - ${err.message} - ${req.originalUrl} - ${
+    `${err.status ?? 500} - ${err.message} - ${req.originalUrl} - ${
       req.method
     } - ${req.ip}`
   );
@@ -74,7 +70,7 @@ export default (err, req, res, next) => {
     success: false,
     statusCode,
     message, // Ensure message is included in the response
-    data: [],
+    data: null,
   });
 };
 

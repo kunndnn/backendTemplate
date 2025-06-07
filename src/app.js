@@ -64,8 +64,8 @@ app.use(errorHandler);
 import { userHandler } from "./controllers/sockets/index.js";
 const onConnection = async (socket) => {
   const clientIP = socket.handshake;
-  console.log(clientIP, "connected");
-  console.log(socket.id, "connected", socket.client.id, "the client id");
+  // console.log(clientIP, "connected");
+  // console.log(socket.id, "connected", socket.client.id, "the client id");
   await userHandler(io, socket);
 };
 

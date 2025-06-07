@@ -1,6 +1,15 @@
 import { genSalt } from "bcrypt";
 import crypto from "crypto";
 
+export const generateOtp = (length = 4) => {
+  const digits = "0123456789";
+  let otp = "";
+  for (let i = 0; i < length; i++) {
+    otp += digits[Math.floor(Math.random() * 10)];
+  }
+  return otp;
+};
+
 export const randomString = async (salt = 12) => await genSalt(salt);
 // const string = await randomString();
 

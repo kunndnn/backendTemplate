@@ -1,10 +1,12 @@
 import { Types } from "mongoose";
+const { ObjectId } = Types;
 import chatRoomsModel from "#models/chatRooms.models";
 import chatsModel from "#models/chats.models";
 import userModels from "#models/user.models";
 import deleteChatModels from "#models/deleteChat.models";
 import pinnedChatsModels from "#models/pinnedChats.models";
 import { SuccessSend, ErrorSend } from "#helpers/response";
+import { getChatsListing } from "../../utils/services/dbQueries.js";
 
 // to emit the error
 const emitError = (socketType = "error", err, socket, statusCode = 500) =>
@@ -12,81 +14,6 @@ const emitError = (socketType = "error", err, socket, statusCode = 500) =>
     socketType,
     new ErrorSend(statusCode, "Error sending message", err.message)
   );
-
-const getChatsListing = async (
-  userObjId = new Types.ObjectId(String(userObjId)),
-  offset = 0,
-  limit = 10
-) => {
-  // console.log({ userObjId });
-  const chats = await chatRoomsModel.aggregate([
-    {
-      $match: {
-        $or: [{ senderId: userObjId }, { receiverId: userObjId }],
-      },
-    },
-    {
-      $lookup: {
-        from: "users", // name of the users collection
-        let: { senderId: "$senderId", receiverId: "$receiverId" },
-        pipeline: [
-          {
-            $match: {
-              $expr: {
-                $cond: [
-                  { $ne: ["$$senderId", userObjId] },
-                  { $eq: ["$_id", "$$senderId"] },
-                  { $eq: ["$_id", "$$receiverId"] },
-                ],
-              },
-            },
-          },
-          {
-            $project: {
-              _id: 1,
-              fullName: 1, // assuming you want to get the fullName from the users collection
-              image: 1, // and image from the users collection
-              // Add other fields you want to project
-            },
-          },
-        ],
-        as: "userDetails",
-      },
-    },
-    { $unwind: "$userDetails" }, // Unwind the userDetails array
-    {
-      $lookup: {
-        from: "chats",
-        localField: "_id",
-        foreignField: "roomId",
-        as: "chatMessage",
-        // to apply conditions within the lookup
-        pipeline: [
-          { $sort: { createdAt: -1 } },
-          { $limit: 1 },
-          {
-            $project: {
-              _id: 1,
-              message: 1,
-              type: 1,
-              createdAt: {
-                $dateToString: {
-                  format: "%Y-%m-%d %H:%M:%S",
-                  date: "$createdAt",
-                },
-              }, // format the date
-            },
-          },
-        ],
-      },
-    },
-    { $unwind: "$chatMessage" },
-    { $skip: offset }, // skip users listing
-    { $limit: limit }, // limit per page users
-    { $sort: { _id: -1 } }, // sorting in descending order
-  ]);
-  return chats;
-};
 
 export const userHandler = async (io, socket) => {
   // socket.on("test", (data) => {
@@ -122,60 +49,6 @@ export const userHandler = async (io, socket) => {
   });
 
   // join the room and send all the chats till now
-  // socket.on("roomJoin", async (body) => {
-  //   try {
-  //     if (typeof body !== "object") body = JSON.parse(body); // convert to JSON
-  //     const { senderId, receiverId } = body;
-  //     let roomId;
-  //     const roomFound = await chatRoomsModel.findOne({
-  //       $or: [
-  //         {
-  //           $and: [
-  //             { senderId: new Types.ObjectId(String(senderId)) },
-  //             { receiverId: new Types.ObjectId(String(receiverId)) },
-  //           ],
-  //         },
-  //         {
-  //           $and: [
-  //             { senderId: new Types.ObjectId(String(receiverId)) },
-  //             { receiverId: new Types.ObjectId(String(senderId)) },
-  //           ],
-  //         },
-  //       ],
-  //     });
-  //     if (!roomFound) {
-  //       // roomId found then send room
-  //       const room = await chatRoomsModel.create({ senderId, receiverId });
-  //       roomId = String(room._id);
-  //     } else {
-  //       roomId = String(roomFound._id);
-  //     }
-
-  //     const limit = body.limit || 10,
-  //       page = body.page || 1;
-  //     const offset = (page - 1) * limit;
-  //     const chats = await chatsModel
-  //       .find({
-  //         roomId: new Types.ObjectId(roomId),
-  //       })
-  //       .populate("senderId", "fullName image")
-  //       .skip(offset)
-  //       .limit(limit)
-  //       .sort({ _id: -1 });
-
-  //     //join room
-  //     socket.join(roomId);
-  //     const data = { roomId, chats, limit, page };
-  //     io.to(roomId).emit(
-  //       "roomJoin",
-  //       new SuccessSend(200, "messages listing", data)
-  //     );
-  //   } catch (error) {
-  //     // io.emit("roomJoin", new ErrorSend(500, "Some Error occured", []));
-  //     emitError("roomJoin", error, socket);
-  //     console.log({ error });
-  //   }
-  // });
   socket.on("roomJoin", async (body) => {
     try {
       if (typeof body !== "object") body = JSON.parse(body); // convert to JSON
@@ -186,14 +59,14 @@ export const userHandler = async (io, socket) => {
         $or: [
           {
             $and: [
-              { senderId: new Types.ObjectId(String(senderId)) },
-              { receiverId: new Types.ObjectId(String(receiverId)) },
+              { senderId: new ObjectId(String(senderId)) },
+              { receiverId: new ObjectId(String(receiverId)) },
             ],
           },
           {
             $and: [
-              { senderId: new Types.ObjectId(String(receiverId)) },
-              { receiverId: new Types.ObjectId(String(senderId)) },
+              { senderId: new ObjectId(String(receiverId)) },
+              { receiverId: new ObjectId(String(senderId)) },
             ],
           },
         ],
@@ -211,18 +84,18 @@ export const userHandler = async (io, socket) => {
       const deleteDate = await deleteChatModels
         .findOne({
           $and: [
-            { userId: new Types.ObjectId(String(senderId)) },
-            { roomId: new Types.ObjectId(String(roomId)) },
+            { userId: new ObjectId(String(senderId)) },
+            { roomId: new ObjectId(String(roomId)) },
           ],
         })
         .sort({ _id: -1 });
       const offset = (page - 1) * limit;
 
-      let filter = { roomId: new Types.ObjectId(roomId) };
+      let filter = { roomId: new ObjectId(roomId) };
       if (deleteDate) {
         filter = {
           $and: [
-            { roomId: new Types.ObjectId(String(roomId)) },
+            { roomId: new ObjectId(String(roomId)) },
             { createdAt: { $gt: new Date(deleteDate.createdAt) } },
           ],
         };
@@ -250,6 +123,13 @@ export const userHandler = async (io, socket) => {
 
   // send message
   socket.on("message", async (body) => {
+    //     {
+    //     "senderId": "",
+    //     "roomId": "",
+    //     "roomType": "",
+    //     "message": "",
+    //     "type": ""
+    // }
     try {
       if (typeof body !== "object") body = JSON.parse(body);
       const { senderId, roomId, roomType, message, type } = body;
@@ -330,8 +210,8 @@ export const userHandler = async (io, socket) => {
     try {
       if (typeof body !== "object") body = JSON.parse(body);
       const { userId, pinChatId, type, chatType } = body;
-      const userObjId = new Types.ObjectId(String(userId)),
-        pinnedChat = new Types.ObjectId(String(pinChatId));
+      const userObjId = new ObjectId(String(userId)),
+        pinnedChat = new ObjectId(String(pinChatId));
 
       let msg = "chat pinned successfully";
 
@@ -379,7 +259,7 @@ export const userHandler = async (io, socket) => {
     try {
       if (typeof body !== "object") body = JSON.parse(body);
       const { userId, message } = body;
-      const userObjId = new Types.ObjectId(String(userId));
+      const userObjId = new ObjectId(String(userId));
 
       const msgMatches = await chatsModel.aggregate([
         {
@@ -457,7 +337,7 @@ export const userHandler = async (io, socket) => {
     try {
       if (typeof body !== "object") body = JSON.parse(body);
       const { msgId } = body;
-      const msgObjId = new Types.ObjectId(String(msgId));
+      const msgObjId = new ObjectId(String(msgId));
 
       const msgMatches = await chatsModel
         .aggregate([
