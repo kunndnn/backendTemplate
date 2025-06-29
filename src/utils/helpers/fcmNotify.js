@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 // Load credentials once at startup
 const credentialsPath = path.resolve(
   __dirname,
-  "../../storage/app/firebase/firebase_credentials.json"
+  "../../../public/firebase/firebaseCredential.json"
 );
 const credentials = JSON.parse(fs.readFileSync(credentialsPath, "utf-8"));
 const projectId = process.env.FIREBASE_PROJECT_ID || credentials.project_id;

@@ -20,7 +20,7 @@ const userSchema = new Schema(
         },
         message: ({ value }) => `${value} is not a valid email address!`,
       },
-      lowecase: true,
+      lowercase: true,
       trim: true,
     },
     socialId: {
@@ -73,7 +73,6 @@ userSchema.methods.isPasswordCorrect = async function (password) {
   return await compare(password, this.password);
 };
 
-
 // method to generate access token
 userSchema.methods.generateAccessToken = function () {
   return jwt.sign(
@@ -106,5 +105,13 @@ userSchema.methods.generateRefreshToken = function () {
 userSchema.virtual("detail").get(function () {
   return `${this.fullName}'s mail is ${this.email}`;
 });
+
+userSchema.virtual("devices", {
+  ref: "userDevice", // model name of device
+  localField: "_id", // user._id
+  foreignField: "userId", // userDevice.userId
+});
+userSchema.set("toObject", { virtuals: true });
+userSchema.set("toJSON", { virtuals: true });
 
 export default model("user", userSchema);

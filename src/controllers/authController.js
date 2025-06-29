@@ -1,13 +1,15 @@
-import { promiseHandler } from "#helpers/promiseHandler";
-import { SuccessSend, ErrorSend } from "#helpers/response";
-import userModel from "#models/user.models";
-import otpModel from "#models/otp.models";
-import jwt from "jsonwebtoken";
-import { promises as fs } from "fs"; // Correct import for fs.promises
 import fss from "fs";
 import path from "path";
+import jwt from "jsonwebtoken";
+import { promises as fs } from "fs"; // Correct import for fs.promises
+import { promiseHandler } from "#helpers/promiseHandler";
+import { SuccessSend, ErrorSend } from "#helpers/response";
 import { generateOtp } from "#helpers/common";
 import { sendMailToUser } from "#services/sendMail";
+import otpModel from "#models/otp.models";
+import userModel from "#models/user.models";
+import userDeviceModels from "#models/userDevice.models";
+
 const { BASE_URL } = process.env;
 const generateTokens = async (userId) => {
   try {
@@ -32,10 +34,21 @@ export const register = promiseHandler(async (req, res) => {
     const image = `${BASE_URL}/${req?.file?.path?.split("public")[1]}`;
     userData.image = image;
   }
+  const deviceData = {
+    deviceId: userData.deviceId,
+    deviceType: userData.deviceType,
+    deviceToken: userData.deviceToken,
+  };
+
+  delete userData.deviceId;
+  delete userData.deviceType;
+  delete userData.deviceToken;
 
   const user = await userModel.create(userData),
     accessToken = user.generateAccessToken(),
     refreshToken = user.generateRefreshToken();
+
+  await userDeviceModels.create({ ...deviceData, userId: user._id });
 
   res
     .status(201)
@@ -51,7 +64,7 @@ export const register = promiseHandler(async (req, res) => {
 });
 
 export const login = promiseHandler(async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, deviceId, deviceType, deviceToken } = req.body;
   const user = await userModel.findOne({ email }).select("+password");
 
   if (!user) throw new ErrorSend(403, "User not found", []);
@@ -63,6 +76,13 @@ export const login = promiseHandler(async (req, res) => {
     generateTokens(user._id),
     userModel.findById(user._id).select("-password -refreshToken"),
   ]);
+
+  // find if device exists or not if not then create and also updated the userid if exists
+  await userDeviceModels.findOneAndUpdate(
+    { deviceId, deviceType, deviceToken },
+    { userId: user._id },
+    { upsert: true, new: true }
+  );
 
   res
     .status(200)
@@ -101,6 +121,12 @@ export const socialLogin = promiseHandler(async (req, res) => {
     refreshToken = userCreate.generateRefreshToken();
     user = userCreate;
   }
+
+  await userDeviceModels.findOneAndUpdate(
+    { deviceId, deviceType, deviceToken },
+    { userId: user._id },
+    { upsert: true, new: true }
+  );
 
   res
     .status(200)
@@ -182,11 +208,20 @@ export const refreshAccessToken = promiseHandler(async (req, res) => {
 });
 
 export const logout = promiseHandler(async (req, res) => {
-  await userModel.findByIdAndUpdate(req.user._id, {
-    $unset: {
-      refreshToken: 1, // this removes the field from document
-    },
-  });
+  const { deviceId, deviceType, deviceToken } = req.body;
+
+  await Promise.all([
+    userModel.findByIdAndUpdate(req.user._id, {
+      $unset: {
+        refreshToken: 1, // this removes the field from document
+      },
+    }),
+    userDeviceModels.findOneAndDelete({
+      deviceId,
+      deviceType,
+      deviceToken,
+    }),
+  ]);
 
   res
     .clearCookie("accessToken")

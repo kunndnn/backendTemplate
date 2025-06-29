@@ -1,13 +1,13 @@
 import { Types } from "mongoose";
 const { ObjectId } = Types;
-import chatRoomsModel from "#models/chatRooms.models";
-import chatsModel from "#models/chats.models";
+import chatRoomsModel from "#models/chatRoom.models";
+import chatsModel from "#models/chat.models";
 import userModels from "#models/user.models";
 import deleteChatModels from "#models/deleteChat.models";
-import pinnedChatsModels from "#models/pinnedChats.models";
+import pinnedChatsModels from "#models/pinnedChat.models";
 import { SuccessSend, ErrorSend } from "#helpers/response";
 import { getChatsListing } from "../../utils/services/dbQueries.js";
-
+import { fcmNotify } from "#helpers/fcmNotify";
 // to emit the error
 const emitError = (socketType = "error", err, socket, statusCode = 500) =>
   socket.emit(
@@ -143,14 +143,26 @@ export const userHandler = async (io, socket) => {
         );
       }
 
-      const chat = await chatsModel.create({
-        senderId,
-        roomId,
-        roomType,
-        message,
-        type,
-      });
+      const [chat, devices] = await Promise.all([
+        chatsModel.create({
+          senderId,
+          roomId,
+          roomType,
+          message,
+          type,
+        }),
 
+        chatRoomsModel.findById(roomId).populate({
+          path: "receiverId",
+          // the virtual field from user schema
+          populate: { path: "devices" },
+        }),
+      ]);
+
+      // notify to every device
+      devices?.receiverId?.devices.map(
+        async (device) => await fcmNotify(device?.deviceToken)
+      );
       //join room
       const room = String(roomId);
       socket.join(room);

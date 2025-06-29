@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
 const { ObjectId } = Types;
-import chatRoomsModel from "#models/chatRooms.models";
+import chatRoomsModel from "#models/chatRoom.models";
 
 export const getChatsListing = async (userObjId, offset = 0, limit = 10) => {
   userObjId = new ObjectId(String(userObjId));

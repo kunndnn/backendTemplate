@@ -11,6 +11,7 @@ import {
   forgetPassValids,
   verifyOtpValids,
   resetPassValids,
+  logoutValids,
 } from "#middlewares/validations/auth";
 
 import {
@@ -46,7 +47,7 @@ router
 router.route("/refresh-token").post(refreshAccessToken); // generate refresh token
 
 router.use(verifyToken); // middleware to verify access token for the below routes
-router.route("/logout").post(logout); // logout
+router.route("/logout").post(logoutValids, validateCheck, logout); // logout
 router
   .route("/profile")
   .get(profile) // get profile

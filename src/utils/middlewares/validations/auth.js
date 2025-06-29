@@ -3,6 +3,21 @@ import Joi from "joi";
 export const loginValidations = [
   body("password").notEmpty().withMessage("Please enter password"),
   body("email").notEmpty().withMessage("Please enter email").escape().trim(),
+  body("deviceId")
+    .notEmpty()
+    .withMessage("Please enter deviceId")
+    .escape()
+    .trim(),
+  body("deviceType")
+    .notEmpty()
+    .withMessage("Please enter deviceType")
+    .escape()
+    .trim(),
+  body("deviceToken")
+    .notEmpty()
+    .withMessage("Please enter deviceToken")
+    .escape()
+    .trim(),
 ];
 
 export const signupValidations = [
@@ -17,6 +32,22 @@ export const signupValidations = [
         throw new Error("Passwords must be same");
       }
     }),
+
+  body("deviceId")
+    .notEmpty()
+    .withMessage("Please enter deviceId")
+    .escape()
+    .trim(),
+  body("deviceType")
+    .notEmpty()
+    .withMessage("Please enter deviceType")
+    .escape()
+    .trim(),
+  body("deviceToken")
+    .notEmpty()
+    .withMessage("Please enter deviceToken")
+    .escape()
+    .trim(),
 ];
 
 export const socialLoginValidations = (req, res, next) => {
@@ -26,6 +57,9 @@ export const socialLoginValidations = (req, res, next) => {
     socialId: Joi.string().required(),
     socialType: Joi.string().valid("google", "apple").required(),
     image: Joi.string().optional(),
+    deviceId: Joi.string().required(),
+    deviceType: Joi.string().required(),
+    deviceToken: Joi.string().required(),
   });
   next();
 };
@@ -59,6 +93,15 @@ export const resetPassValids = (req, res, next) => {
   req.validations = Joi.object({
     email: Joi.string().email().required(),
     password: Joi.string().required(),
+  });
+  next();
+};
+
+export const logoutValids = (req, res, next) => {
+  req.validations = Joi.object({
+    deviceId: Joi.string().required(),
+    deviceType: Joi.string().required(),
+    deviceToken: Joi.string().required(),
   });
   next();
 };
