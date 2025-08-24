@@ -25,6 +25,7 @@ import {
   logout,
   profile,
   changePass,
+  usersListing,
 } from "../controllers/authController.js";
 
 import { test } from "../controllers/testController.js";
@@ -56,4 +57,5 @@ router
   .route("/change-password")
   .post(signupValidations, validationCheck, changePass); //change password
 
+router.route("/users").get(usersListing);
 export default router;

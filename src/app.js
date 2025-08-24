@@ -4,11 +4,19 @@ import logger from "morgan";
 import { createServer } from "http";
 import { createServer as createSecureServer } from "https";
 import { Server } from "socket.io";
+import cors from "cors";
 const app = express();
 const { PORT, ENVIRONMENT } = process.env;
 
 // Choose HTTP or HTTPS server based on ENVIRONMENT
 let httpServer = createServer(app);
+app.use(
+  cors({
+    origin: "http://localhost:5173", // or "*" for all origins (not recommended in prod)
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  })
+);
 
 if (ENVIRONMENT === "production") {
   // Load SSL certificate and key

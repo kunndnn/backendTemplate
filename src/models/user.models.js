@@ -50,6 +50,10 @@ const userSchema = new Schema(
       required: [true, "Password is required"],
       select: false,
     },
+    role: {
+      type: Number,
+      default: 1, // 0 for admin, 1 for user
+    },
     refreshToken: {
       type: String,
     },

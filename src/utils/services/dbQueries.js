@@ -1,6 +1,7 @@
 import { Types } from "mongoose";
 const { ObjectId } = Types;
 import chatRoomsModel from "#models/chatRoom.models";
+import userModels from "#models/user.models";
 
 export const getChatsListing = async (userObjId, offset = 0, limit = 10) => {
   userObjId = new ObjectId(String(userObjId));
@@ -119,4 +120,21 @@ export const getChatsListing = async (userObjId, offset = 0, limit = 10) => {
   ]);
 
   return chats;
+};
+
+export const users = async ({ page, limit, userId }) => {
+  const skip = (page - 1) * limit;
+  const filter = { $and: [{ role: { $ne: 1 } }, { _id: { $ne: userId } }] };
+  
+  const [items, total] = await Promise.all([
+    userModels.find(filter).skip(skip).limit(limit).sort({ createdAt: -1 }), // optional sort
+    userModels.countDocuments(filter),
+  ]);
+
+  return {
+    users: items,
+    total,
+    page,
+    totalPages: Math.ceil(total / limit),
+  };
 };

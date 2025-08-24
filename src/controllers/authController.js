@@ -9,6 +9,7 @@ import { sendMailToUser } from "#services/sendMail";
 import otpModel from "#models/otp.models";
 import userModel from "#models/user.models";
 import userDeviceModels from "#models/userDevice.models";
+import { users } from "#services/dbQueries";
 
 const { BASE_URL } = process.env;
 const generateTokens = async (userId) => {
@@ -287,4 +288,16 @@ export const changePass = promiseHandler(async (req, res) => {
   res
     .status(200)
     .json(new SuccessSend(200, "Password updated successfully", []));
+});
+
+export const usersListing = promiseHandler(async (req, res) => {
+  let { page = 1, limit = 10 } = req.query;
+  const userId = String(req.user._id); // Ensure it's converted to string
+  // convert to numbers
+  page = parseInt(page);
+  limit = parseInt(limit);
+
+  const data = await users({ page, limit, userId });
+
+  res.status(200).json(new SuccessSend(200, "Users listing", data));
 });
