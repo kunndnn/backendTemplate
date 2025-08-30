@@ -124,7 +124,7 @@ export const getChatsListing = async (userObjId, offset = 0, limit = 10) => {
 
 export const users = async ({ page, limit, userId, search = "" }) => {
   const skip = (page - 1) * limit;
-  const filter = { $and: [{ role: { $ne: 1 } }, { _id: { $ne: userId } }] };
+  const filter = { $and: [{ role: { $ne: 0 } }, { _id: { $ne: userId } }] };
 
   // if search is provided, add regex on fullName
   if (search && search.trim() !== "") {
