@@ -122,12 +122,19 @@ export const getChatsListing = async (userObjId, offset = 0, limit = 10) => {
   return chats;
 };
 
-export const users = async ({ page, limit, userId }) => {
+export const users = async ({ page, limit, userId, search = "" }) => {
   const skip = (page - 1) * limit;
   const filter = { $and: [{ role: { $ne: 1 } }, { _id: { $ne: userId } }] };
-  
+
+  // if search is provided, add regex on fullName
+  if (search && search.trim() !== "") {
+    filter.$and.push({
+      fullName: { $regex: search, $options: "i" }, // case-insensitive search
+    });
+  }
+
   const [items, total] = await Promise.all([
-    userModels.find(filter).skip(skip).limit(limit).sort({ createdAt: -1 }), // optional sort
+    userModels.find(filter).select("_id fullName image").skip(skip).limit(limit).sort({ createdAt: -1 }), // optional sort
     userModels.countDocuments(filter),
   ]);
 

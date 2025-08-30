@@ -291,13 +291,13 @@ export const changePass = promiseHandler(async (req, res) => {
 });
 
 export const usersListing = promiseHandler(async (req, res) => {
-  let { page = 1, limit = 10 } = req.query;
+  let { page = 1, limit = 10, search } = req.query;
   const userId = String(req.user._id); // Ensure it's converted to string
   // convert to numbers
   page = parseInt(page);
   limit = parseInt(limit);
 
-  const data = await users({ page, limit, userId });
+  const data = await users({ page, limit, userId, search });
 
   res.status(200).json(new SuccessSend(200, "Users listing", data));
 });
