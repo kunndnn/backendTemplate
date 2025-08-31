@@ -3,9 +3,29 @@ const { ObjectId } = Types;
 import chatRoomsModel from "#models/chatRoom.models";
 import userModels from "#models/user.models";
 
-export const getChatsListing = async (userObjId, offset = 0, limit = 10) => {
+export const getChatsListing = async (
+  userObjId,
+  offset = 0,
+  limit = 10,
+  search
+) => {
   userObjId = new ObjectId(String(userObjId));
 
+  const userFilter = {
+    $match: {
+      $expr: {
+        $cond: [
+          { $ne: ["$$senderId", userObjId] },
+          { $eq: ["$_id", "$$senderId"] },
+          { $eq: ["$_id", "$$receiverId"] },
+        ],
+      },
+    },
+  };
+
+  if (search && search.trim() !== "") { // search by full name if search has value
+    userFilter.$match.fullName = { $regex: search, $options: "i" };
+  }
   const chats = await chatRoomsModel.aggregate([
     {
       $match: {
@@ -89,17 +109,7 @@ export const getChatsListing = async (userObjId, offset = 0, limit = 10) => {
         from: "users",
         let: { senderId: "$senderId", receiverId: "$receiverId" },
         pipeline: [
-          {
-            $match: {
-              $expr: {
-                $cond: [
-                  { $ne: ["$$senderId", userObjId] },
-                  { $eq: ["$_id", "$$senderId"] },
-                  { $eq: ["$_id", "$$receiverId"] },
-                ],
-              },
-            },
-          },
+          userFilter,
           {
             $project: {
               _id: 1,
@@ -134,7 +144,12 @@ export const users = async ({ page, limit, userId, search = "" }) => {
   }
 
   const [items, total] = await Promise.all([
-    userModels.find(filter).select("_id fullName image").skip(skip).limit(limit).sort({ createdAt: -1 }), // optional sort
+    userModels
+      .find(filter)
+      .select("_id fullName image")
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 }), // optional sort
     userModels.countDocuments(filter),
   ]);
 

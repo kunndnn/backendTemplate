@@ -31,10 +31,10 @@ export const userHandler = async (io, socket) => {
       */
     try {
       if (typeof body !== "object") body = JSON.parse(body);
-      const { userId, limit = 10, page = 1 } = body;
+      const { userId, limit = 10, page = 1, search } = body;
       const offset = (page - 1) * limit;
 
-      const chats = await getChatsListing(userId, offset, limit);
+      const chats = await getChatsListing(userId, offset, limit, search);
       // console.log({ chats });
       // return socket.emit("chatsListing", chats);
       const data = { chats, limit, page };
@@ -144,13 +144,20 @@ export const userHandler = async (io, socket) => {
       }
 
       const [chat, devices] = await Promise.all([
-        chatsModel.create({
-          senderId,
-          roomId,
-          roomType,
-          message,
-          type,
-        }),
+        chatsModel
+          .create({
+            senderId,
+            roomId,
+            roomType,
+            message,
+            type,
+          })
+          .then(
+            (data) =>
+              chatsModel
+                .findById(data._id)
+                .populate("senderId", "fullName image") // get only mention fields
+          ),
 
         chatRoomsModel.findById(roomId).populate({
           path: "receiverId",
@@ -170,7 +177,7 @@ export const userHandler = async (io, socket) => {
       io.to(room).emit("message", new SuccessSend(200, "message", chat));
       let userId = String(roomExists.receiverId);
       const chats = await getChatsListing(userId);
-      const data = { chats, limit: 0, page: 10 };
+      const data = { chats, limit: 10, page: 1 };
       socket.join(userId); // join room
       io.to(userId).emit(
         "chatsListing",
