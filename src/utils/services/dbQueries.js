@@ -11,31 +11,35 @@ export const getChatsListing = async (
 ) => {
   userObjId = new ObjectId(String(userObjId));
 
-  const userFilter = {
-    $match: {
-      $expr: {
-        $cond: [
-          { $ne: ["$$senderId", userObjId] },
-          { $eq: ["$_id", "$$senderId"] },
-          { $eq: ["$_id", "$$receiverId"] },
-        ],
-      },
-    },
-  };
-
-  if (search && search.trim() !== "") { // search by full name if search has value
-    userFilter.$match.fullName = { $regex: search, $options: "i" };
+  const userSearchFilter = {};
+  if (search && search.trim() !== "") {
+    userSearchFilter.fullName = { $regex: search, $options: "i" };
   }
+
   const chats = await chatRoomsModel.aggregate([
     {
       $match: {
         $or: [{ senderId: userObjId }, { receiverId: userObjId }],
       },
     },
-    // STEP 1: Lookup delete timestamp if exists
+
+    // STEP 0: compute otherUserId explicitly
+    {
+      $addFields: {
+        otherUserId: {
+          $cond: [
+            { $eq: ["$senderId", userObjId] },
+            "$receiverId",
+            "$senderId",
+          ],
+        },
+      },
+    },
+
+    // STEP 1: Lookup delete timestamp
     {
       $lookup: {
-        from: "deletechats", // collection name
+        from: "deletechats",
         let: { roomId: "$_id" },
         pipeline: [
           {
@@ -48,7 +52,7 @@ export const getChatsListing = async (
               },
             },
           },
-          { $sort: { _id: -1 } }, // in case multiple delete records exist
+          { $sort: { _id: -1 } },
           { $limit: 1 },
         ],
         as: "deletionInfo",
@@ -103,13 +107,18 @@ export const getChatsListing = async (
     },
     { $unwind: "$chatMessage" },
 
-    // STEP 3: Lookup user details (same as before)
+    // STEP 3: Lookup "other user" directly
     {
       $lookup: {
         from: "users",
-        let: { senderId: "$senderId", receiverId: "$receiverId" },
+        localField: "otherUserId",
+        foreignField: "_id",
         pipeline: [
-          userFilter,
+          {
+            $match: {
+              ...userSearchFilter,
+            },
+          },
           {
             $project: {
               _id: 1,
@@ -123,7 +132,7 @@ export const getChatsListing = async (
     },
     { $unwind: "$userDetails" },
 
-    // FINAL STEPS: pagination & sorting
+    // FINAL: sorting & pagination
     { $sort: { "chatMessage.createdAt": -1 } },
     { $skip: offset },
     { $limit: limit },

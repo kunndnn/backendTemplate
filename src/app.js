@@ -31,6 +31,7 @@ if (ENVIRONMENT === "production") {
 //initializing io
 const allowedOrigins = [
   `http${ENVIRONMENT === "production" ? "s" : ""}://localhost:${PORT}`, // Handle HTTP or HTTPS origin
+  `http://localhost:5173`,
 ];
 // Initialize Socket.IO
 const io = new Server(httpServer, {
@@ -53,6 +54,11 @@ app
   .use(static_("public")) // set public as static folder for assets
   .use(cookieParser()) // to use cookies
   .use(logger("dev")); // logger in console
+
+// rate limiter
+import rateLimiter from "#middlewares/rateLimiter";
+app.use("/api/v1", rateLimiter);
+
 
 // emergency
 app.get("/boom", (req, res) => {

@@ -132,8 +132,9 @@ export const userHandler = async (io, socket) => {
     // }
     try {
       if (typeof body !== "object") body = JSON.parse(body);
-      const { senderId, roomId, roomType, message, type } = body;
-
+      const { senderId, roomId, roomType, message, attachment } = body;
+      const type =
+        message && attachment ? "both" : message ? "text" : "attachment";
       // Validate room existence
       const roomExists = await chatRoomsModel.findById(roomId);
       if (!roomExists) {
@@ -150,6 +151,7 @@ export const userHandler = async (io, socket) => {
             roomId,
             roomType,
             message,
+            attachment,
             type,
           })
           .then(
