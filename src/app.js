@@ -66,7 +66,7 @@ app.get("/boom", (req, res) => {
 });
 
 // import routes
-import auth from "./routes/auth.routes.js";
+import auth from "./routes/route.js";
 // use routes
 app.use("/api/v1", auth);
 

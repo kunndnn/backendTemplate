@@ -1,4 +1,4 @@
-import logger from "#helpers/logger";
+import logger from "#config/logger";
 import { ErrorSend } from "#helpers/response";
 import deleteFile from "#services/deleteFile";
 import mongoose from "mongoose";
@@ -73,5 +73,3 @@ export default (err, req, res, next) => {
     data: null,
   });
 };
-
-

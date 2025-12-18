@@ -158,7 +158,8 @@ export const users = async ({ page, limit, userId, search = "" }) => {
       .select("_id fullName image")
       .skip(skip)
       .limit(limit)
-      .sort({ createdAt: -1 }), // optional sort
+      .sort({ createdAt: -1 })
+      .lean(), // optional sort
     userModels.countDocuments(filter),
   ]);
 
@@ -168,4 +169,21 @@ export const users = async ({ page, limit, userId, search = "" }) => {
     page,
     totalPages: Math.ceil(total / limit),
   };
+};
+
+export const generateTokens = async (userId) => {
+  try {
+    const user = await userModel.findById(userId),
+      accessToken = user.generateAccessToken(),
+      refreshToken = user.generateRefreshToken();
+    user.refreshToken = refreshToken;
+    await user.save();
+    return { accessToken, refreshToken };
+  } catch (error) {
+    throw new ErrorSend(
+      500,
+      "Something went wrong while generating referesh and access token",
+      []
+    );
+  }
 };

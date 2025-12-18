@@ -26,9 +26,9 @@ import {
   profile,
   changePass,
   usersListing,
-} from "../controllers/authController.js";
+} from "../../controllers/user/auth.controller.js";
 
-import { test } from "../controllers/testController.js";
+import { test } from "../../controllers/testController.js";
 
 router.route("/test").get(testValidations, validateCheck, test);
 router.route("/register").post(upload.single("image"), register); // register

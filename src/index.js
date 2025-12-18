@@ -1,13 +1,37 @@
+// cluster-server.js
+import cluster from "cluster";
+import os from "os";
 import "dotenv/config";
-import { connectDB } from "./utils/services/db/connection.js";
+import { connectDB } from "./config/connection.js";
 import { httpServer } from "./app.js";
-const { PORT } = process.env || 3001;
 
-connectDB()
-  .then(() => {
-    // app.listen(PORT, () => console.log(`http://localhost:${PORT}`));
-    httpServer.listen(PORT, () => console.log(`http://localhost:${PORT}`));
-  })
-  .catch((err) => {
-    console.log("DB connection failed !!! ", err);
+const numCPUs = os.cpus().length;
+const PORT = process.env.PORT ?? 3001;
+
+if (cluster.isPrimary) {
+  // Master process
+  console.log(`Master ${process.pid} is running`);
+
+  // Fork workers = number of CPU cores
+  for (let i = 0; i < numCPUs; i++) {
+    cluster.fork();
+  }
+
+  // If a worker dies, restart it
+  cluster.on("exit", (worker, code, signal) => {
+    console.log(`Worker ${worker.process.pid} died, restarting...`);
+    cluster.fork();
   });
+} else {
+  // Worker processes
+  connectDB()
+    .then(() => {
+      httpServer.listen(PORT, () =>
+        console.log(`Worker ${process.pid} running at http://localhost:${PORT}`)
+      );
+    })
+    .catch((err) => {
+      console.log("DB connection failed !!! ", err);
+      process.exit(1); // stop worker if DB connection fails
+    });
+}

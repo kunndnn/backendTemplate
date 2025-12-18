@@ -13,7 +13,8 @@
     "#models/*": "./src/models/*.js",
     "#helpers/*": "./src/utils/helpers/*.js",
     "#middlewares/*": "./src/utils/middlewares/*.js",
-    "#services/*": "./src/utils/services/*.js"
+    "#services/*": "./src/utils/services/*.js",
+    "#config/*": "./src/config/*.js"
   },
   "keywords": [],
   "author": "",
