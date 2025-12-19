@@ -11,6 +11,7 @@
   },
   "imports": {
     "#models/*": "./src/models/*.js",
+    "#controllers/*": "./src/controllers/*.js",
     "#helpers/*": "./src/utils/helpers/*.js",
     "#middlewares/*": "./src/utils/middlewares/*.js",
     "#services/*": "./src/utils/services/*.js",

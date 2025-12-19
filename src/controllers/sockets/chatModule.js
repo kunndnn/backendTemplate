@@ -1,5 +1,3 @@
-import { Types } from "mongoose";
-const { ObjectId } = Types;
 import chatRoomsModel from "#models/chatRoom.models";
 import chatsModel from "#models/chat.models";
 import userModels from "#models/user.models";
@@ -108,7 +106,7 @@ export const userHandler = async (io, socket) => {
         .populate("senderId", "fullName image") // get only mention fields
         .skip(offset)
         .limit(limit)
-        .sort({ _id: -1 });
+        .sort({ _id: -1 }).lean();
 
       socket.join(roomId);
       const data = { roomId, chats, limit, page };
@@ -159,14 +157,14 @@ export const userHandler = async (io, socket) => {
             (data) =>
               chatsModel
                 .findById(data._id)
-                .populate("senderId", "fullName image") // get only mention fields
+                .populate("senderId", "fullName image").lean() // get only mention fields
           ),
 
         chatRoomsModel.findById(roomId).populate({
           path: "receiverId",
           // the virtual field from user schema
           populate: { path: "devices" },
-        }),
+        }).lean(),
       ]);
 
       // notify to every device
@@ -208,7 +206,7 @@ export const userHandler = async (io, socket) => {
       };
       const details = await userModels
         .findByIdAndUpdate(userId, update, { new: true })
-        .select("_id isOnline lastOnline");
+        .select("_id isOnline lastOnline").lean();
       if (!details) throw new Error("User not found");
 
       const result = {
@@ -240,7 +238,7 @@ export const userHandler = async (io, socket) => {
       if (type === "pin") {
         const [pinnedCount, pinnedAlready] = await Promise.all([
           pinnedChatsModels.countDocuments({ userId: userObjId }),
-          pinnedChatsModels.findOne({ userId: userObjId, pinnedChat }),
+          pinnedChatsModels.findOne({ userId: userObjId, pinnedChat }).lean(),
         ]);
 
         if (pinnedCount >= 3) {

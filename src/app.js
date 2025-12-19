@@ -83,7 +83,7 @@ import errorHandler from "#middlewares/errorHandler";
 app.use(errorHandler);
 
 // socket handlers
-import { userHandler } from "./controllers/sockets/index.js";
+import { userHandler } from "./controllers/sockets/chatModule.js";
 const onConnection = async (socket) => {
   const clientIP = socket.handshake;
   // console.log(clientIP, "connected");

@@ -54,6 +54,7 @@ const userSchema = new Schema(
       type: Number,
       default: 1, // 0 for admin, 1 for user
     },
+    isActive: { type: Boolean, default: true },
     refreshToken: {
       type: String,
     },
