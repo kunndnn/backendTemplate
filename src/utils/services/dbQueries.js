@@ -1,7 +1,6 @@
-import { Types } from "mongoose";
-const { ObjectId } = Types;
 import chatRoomsModel from "#models/chatRoom.models";
 import userModels from "#models/user.models";
+import { convertObjectId } from "#helpers/convertObjectId";
 
 export const getChatsListing = async (
   userObjId,
@@ -9,7 +8,7 @@ export const getChatsListing = async (
   limit = 10,
   search
 ) => {
-  userObjId = new ObjectId(String(userObjId));
+  userObjId = convertObjectId(userObjId);
 
   const userSearchFilter = {};
   if (search && search.trim() !== "") {

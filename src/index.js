@@ -4,11 +4,15 @@ import os from "os";
 import "dotenv/config";
 import { connectDB } from "./config/connection.js";
 import { httpServer } from "./app.js";
+import cronJobs from "#services/cronJobs";
 
 const numCPUs = os.cpus().length;
 const PORT = process.env.PORT ?? 3001;
 
 if (cluster.isPrimary) {
+  // run cron jobs
+  cronJobs();
+
   // Master process
   console.log(`Master ${process.pid} is running`);
 

@@ -27,6 +27,8 @@ const transport = createTransport({
 
 export const sendMailToUser = async ({
   to = "test@yopmail.com",
+  cc = [],
+  bcc = [],
   subject = "Subject of E-mail",
   text,
   html,
@@ -41,6 +43,8 @@ export const sendMailToUser = async ({
       subject, // Subject line
     };
 
+    if (cc.length) mailOptions.cc = cc; // array of mails
+    if (bcc.length) mailOptions.bcc = bcc; // array of mails
     if (text) mailOptions.text = text;
     if (attachments.length) mailOptions.attachments = attachments;
     if (html) {

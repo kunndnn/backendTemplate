@@ -16,7 +16,7 @@ const logger = createLogger({
   format: combine(timestamp(), logFormat),
   transports: [
     new transports.File({
-      filename: path.join(__dirname, "../../logs", "logs.log"), // Single file for all logs
+      filename: path.join(__dirname, "../logs", "logs.log"), // Single file for all logs
     }),
     new transports.Console({
       // Optional: Log to console

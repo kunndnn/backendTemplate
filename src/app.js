@@ -59,7 +59,6 @@ app
 import rateLimiter from "#middlewares/rateLimiter";
 app.use("/api/v1", rateLimiter);
 
-
 // emergency
 app.get("/boom", (req, res) => {
   process.exit(1);
@@ -69,6 +68,15 @@ app.get("/boom", (req, res) => {
 import auth from "./routes/route.js";
 // use routes
 app.use("/api/v1", auth);
+
+//health check
+app.get("/health", (req, res) => {
+  res.json({
+    status: "ok",
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+  });
+});
 
 //error handler middleware
 import errorHandler from "#middlewares/errorHandler";

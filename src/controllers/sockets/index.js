@@ -8,6 +8,7 @@ import pinnedChatsModels from "#models/pinnedChat.models";
 import { SuccessSend, ErrorSend } from "#helpers/response";
 import { getChatsListing } from "../../utils/services/dbQueries.js";
 import { fcmNotify } from "#helpers/fcmNotify";
+import { convertObjectId } from "#helpers/convertObjectId";
 // to emit the error
 const emitError = (socketType = "error", err, socket, statusCode = 500) =>
   socket.emit(
@@ -59,14 +60,14 @@ export const userHandler = async (io, socket) => {
         $or: [
           {
             $and: [
-              { senderId: new ObjectId(String(senderId)) },
-              { receiverId: new ObjectId(String(receiverId)) },
+              { senderId: convertObjectId(senderId) },
+              { receiverId: convertObjectId(receiverId) },
             ],
           },
           {
             $and: [
-              { senderId: new ObjectId(String(receiverId)) },
-              { receiverId: new ObjectId(String(senderId)) },
+              { senderId: convertObjectId(receiverId) },
+              { receiverId: convertObjectId(senderId) },
             ],
           },
         ],
@@ -84,18 +85,18 @@ export const userHandler = async (io, socket) => {
       const deleteDate = await deleteChatModels
         .findOne({
           $and: [
-            { userId: new ObjectId(String(senderId)) },
-            { roomId: new ObjectId(String(roomId)) },
+            { userId: convertObjectId(senderId) },
+            { roomId: convertObjectId(roomId) },
           ],
         })
         .sort({ _id: -1 });
       const offset = (page - 1) * limit;
 
-      let filter = { roomId: new ObjectId(roomId) };
+      let filter = { roomId: convertObjectId(roomId) };
       if (deleteDate) {
         filter = {
           $and: [
-            { roomId: new ObjectId(String(roomId)) },
+            { roomId: convertObjectId(roomId) },
             { createdAt: { $gt: new Date(deleteDate.createdAt) } },
           ],
         };
@@ -231,8 +232,8 @@ export const userHandler = async (io, socket) => {
     try {
       if (typeof body !== "object") body = JSON.parse(body);
       const { userId, pinChatId, type, chatType } = body;
-      const userObjId = new ObjectId(String(userId)),
-        pinnedChat = new ObjectId(String(pinChatId));
+      const userObjId = convertObjectId(userId),
+        pinnedChat = convertObjectId(pinChatId);
 
       let msg = "chat pinned successfully";
 
@@ -280,7 +281,7 @@ export const userHandler = async (io, socket) => {
     try {
       if (typeof body !== "object") body = JSON.parse(body);
       const { userId, message } = body;
-      const userObjId = new ObjectId(String(userId));
+      const userObjId = convertObjectId(userId);
 
       const msgMatches = await chatsModel.aggregate([
         {
@@ -358,7 +359,7 @@ export const userHandler = async (io, socket) => {
     try {
       if (typeof body !== "object") body = JSON.parse(body);
       const { msgId } = body;
-      const msgObjId = new ObjectId(String(msgId));
+      const msgObjId = convertObjectId(msgId);
 
       const msgMatches = await chatsModel
         .aggregate([
