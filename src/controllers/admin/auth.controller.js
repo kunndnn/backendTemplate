@@ -5,23 +5,23 @@ import { generateTokens } from "#services/dbQueries";
 
 export const login = promiseHandler(async (req, res) => {
   const { email, password } = req.body;
-  const admin = await userModel.findOne({ email }).select("+password").lean();
+  const admin = await userModel.findOne({ email }).select("+password");
   if (!admin) throw new ErrorSend(403, "User not found");
-  const isPasswordValid = await user.isPasswordCorrect(password);
+  const isPasswordValid = await admin.isPasswordCorrect(password);
   if (!isPasswordValid) throw new ErrorSend(401, "Invalid credentials", []);
-  const [{ accessToken, refreshToken }, loggedInUser] = await Promise.all([
-    generateTokens(user._id),
-    userModel.findById(user._id).select("-password -refreshToken").lean(),
+  const [{ token, refreshToken }, loggedInUser] = await Promise.all([
+    generateTokens(admin._id),
+    userModel.findById(admin._id).select("-password -refreshToken").lean(),
   ]);
-
+console.log({token, refreshToken});
   res
     .status(200)
-    .cookie("accessToken", accessToken)
+    .cookie("token", token)
     .cookie("refreshToken", refreshToken)
     .json(
       new SuccessSend(200, "User logged In Successfully", {
         user: loggedInUser,
-        accessToken,
+        token,
         refreshToken,
       })
     );

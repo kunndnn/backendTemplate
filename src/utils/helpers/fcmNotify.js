@@ -16,15 +16,15 @@ const projectId = process.env.FIREBASE_PROJECT_ID || credentials.project_id;
 /**
  * Get Firebase access token
  */
-async function getAccessToken() {
+async function gettoken() {
   const auth = new GoogleAuth({
     credentials,
     scopes: ["https://www.googleapis.com/auth/firebase.messaging"],
   });
 
   const client = await auth.getClient();
-  const accessToken = await client.getAccessToken();
-  return accessToken.token;
+  const token = await client.gettoken();
+  return token.token;
 }
 
 /**
@@ -41,7 +41,7 @@ export async function fcmNotify(
   data = {}
 ) {
   // console.log({ deviceToken, title, body });
-  const accessToken = await getAccessToken();
+  const token = await gettoken();
   const url = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`;
 
   // Convert all data values to strings
@@ -63,7 +63,7 @@ export async function fcmNotify(
   try {
     const response = await axios.post(url, payload, {
       headers: {
-        Authorization: `Bearer ${accessToken}`,
+        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
     });

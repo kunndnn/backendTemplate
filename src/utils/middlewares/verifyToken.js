@@ -6,8 +6,7 @@ import userModel from "#models/user.models";
 export const verifyToken = promiseHandler(async (req, res, next) => {
   try {
     const token =
-      req.cookies?.accessToken ||
-      req.header("Authorization")?.replace("Bearer ", "");
+      req.cookies?.token || req.header("Authorization")?.replace("Bearer ", "");
 
     if (!token) {
       throw new ErrorSend(401, "Unauthorized request");

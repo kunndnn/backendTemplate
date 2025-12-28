@@ -30,19 +30,19 @@ export const register = promiseHandler(async (req, res) => {
   delete userData.deviceToken;
 
   const user = await userModel.create(userData),
-    accessToken = user.generateAccessToken(),
+    token = user.generatetoken(),
     refreshToken = user.generateRefreshToken();
 
   await userDeviceModels.create({ ...deviceData, userId: user._id });
 
   res
     .status(201)
-    .cookie("accessToken", accessToken)
+    .cookie("token", token)
     .cookie("refreshToken", refreshToken)
     .json(
       new SuccessSend(201, "User Registered Successfully", {
         user,
-        accessToken,
+        token,
         refreshToken,
       })
     );
@@ -57,7 +57,7 @@ export const login = promiseHandler(async (req, res) => {
   const isPasswordValid = await user.isPasswordCorrect(password);
   if (!isPasswordValid) throw new ErrorSend(401, "Invalid credentials", []);
 
-  const [{ accessToken, refreshToken }, loggedInUser] = await Promise.all([
+  const [{ token, refreshToken }, loggedInUser] = await Promise.all([
     generateTokens(user._id),
     userModel.findById(user._id).select("-password -refreshToken").lean(),
   ]);
@@ -71,12 +71,12 @@ export const login = promiseHandler(async (req, res) => {
 
   res
     .status(200)
-    .cookie("accessToken", accessToken)
+    .cookie("token", token)
     .cookie("refreshToken", refreshToken)
     .json(
       new SuccessSend(200, "User logged In Successfully", {
         user: loggedInUser,
-        accessToken,
+        token,
         refreshToken,
       })
     );
@@ -86,11 +86,11 @@ export const socialLogin = promiseHandler(async (req, res) => {
   const userData = req.body;
   const { email, socialId, socialType, image } = userData;
   const userExist = await userModel.findOne({ email });
-  let accessToken, refreshToken, user;
+  let token, refreshToken, user;
 
   if (userExist) {
     const tokens = await generateTokens(userExist._id);
-    accessToken = tokens.accessToken;
+    token = tokens.token;
     refreshToken = tokens.refreshToken;
 
     //update the data
@@ -102,7 +102,7 @@ export const socialLogin = promiseHandler(async (req, res) => {
   } else {
     userData.password = socialId;
     const userCreate = await userModel.create(userData).select("fullName");
-    accessToken = userCreate.generateAccessToken();
+    token = userCreate.generatetoken();
     refreshToken = userCreate.generateRefreshToken();
     user = userCreate;
   }
@@ -115,12 +115,12 @@ export const socialLogin = promiseHandler(async (req, res) => {
 
   res
     .status(200)
-    .cookie("accessToken", accessToken)
+    .cookie("token", token)
     .cookie("refreshToken", refreshToken)
     .json(
       new SuccessSend(201, "User Login Successfully", {
         user,
-        accessToken,
+        token,
         refreshToken,
       })
     );
@@ -163,7 +163,7 @@ export const resetPassword = promiseHandler(async (req, res) => {
   res.status(200).json(new SuccessSend(200, "Password reset successfully"));
 });
 
-export const refreshAccessToken = promiseHandler(async (req, res) => {
+export const refreshtoken = promiseHandler(async (req, res) => {
   const { refreshToken: userRefreshToken } = req.cookies || req.body;
 
   if (!userRefreshToken) throw new ErrorSend(401, "Unauthorized request");
@@ -179,15 +179,15 @@ export const refreshAccessToken = promiseHandler(async (req, res) => {
   if (userRefreshToken !== user?.refreshToken)
     throw new ErrorSend(401, "Refrresh token expired");
 
-  const { accessToken, refreshToken } = await generateTokens(user._id);
+  const { token, refreshToken } = await generateTokens(user._id);
 
   res
     .status(200)
-    .cookie("accessToken", accessToken)
+    .cookie("token", token)
     .cookie("refreshToken", refreshToken)
     .json(
       new SuccessSend(200, "Token regenerated successfully", {
-        accessToken,
+        token,
         refreshToken,
       })
     );
@@ -210,7 +210,7 @@ export const logout = promiseHandler(async (req, res) => {
   ]);
 
   res
-    .clearCookie("accessToken")
+    .clearCookie("token")
     .clearCookie("refreshToken")
     .status(200)
     .json(new SuccessSend(200, "User logout Successfully", []));

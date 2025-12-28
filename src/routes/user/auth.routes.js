@@ -21,7 +21,7 @@ import {
   forgotPassword,
   verifyOTP,
   resetPassword,
-  refreshAccessToken,
+  refreshtoken,
   logout,
   profile,
   changePass,
@@ -45,7 +45,7 @@ router
   .route("/reset-password")
   .post(resetPassValids, validateCheck, resetPassword);
 
-router.route("/refresh-token").post(refreshAccessToken); // generate refresh token
+router.route("/refresh-token").post(refreshtoken); // generate refresh token
 
 router.use(verifyToken); // middleware to verify access token for the below routes
 router.route("/logout").post(logoutValids, validateCheck, logout); // logout
