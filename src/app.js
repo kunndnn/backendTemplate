@@ -1,3 +1,5 @@
+import path from "path";
+import { fileURLToPath } from "url";
 import express, { json, urlencoded, static as static_ } from "express";
 import cookieParser from "cookie-parser";
 import logger from "morgan";
@@ -5,6 +7,8 @@ import { createServer } from "http";
 import { createServer as createSecureServer } from "https";
 import { Server } from "socket.io";
 import cors from "cors";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const app = express();
 const { PORT, ENVIRONMENT } = process.env;
 
@@ -15,7 +19,7 @@ app.use(
     origin: "http://localhost:5173", // or "*" for all origins (not recommended in prod)
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
-  })
+  }),
 );
 
 if (ENVIRONMENT === "production") {
@@ -76,6 +80,11 @@ app.get("/health", (req, res) => {
     uptime: process.uptime(),
     timestamp: new Date().toISOString(),
   });
+});
+
+// frontend host configs
+app.use(static_(path.join(__dirname, "../frontend"))).get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../frontend", "index.html"));
 });
 
 //error handler middleware
