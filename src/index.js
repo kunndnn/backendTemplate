@@ -14,7 +14,7 @@ if (cluster.isPrimary) {
   cronJobs();
 
   // Master process
-  console.log(`Master ${process.pid} is running`);
+  console.warn(`Master ${process.pid} is running`);
 
   // Fork workers = number of CPU cores
   for (let i = 0; i < numCPUs; i++) {
@@ -23,7 +23,7 @@ if (cluster.isPrimary) {
 
   // If a worker dies, restart it
   cluster.on("exit", (worker, code, signal) => {
-    console.log(`Worker ${worker.process.pid} died, restarting...`);
+    console.warn(`Worker ${worker.process.pid} died, restarting...`);
     cluster.fork();
   });
 } else {
@@ -31,11 +31,11 @@ if (cluster.isPrimary) {
   connectDB()
     .then(() => {
       httpServer.listen(PORT, () =>
-        console.log(`Worker ${process.pid} running at http://localhost:${PORT}`)
+        console.warn(`Worker ${process.pid} running at http://localhost:${PORT}`)
       );
     })
     .catch((err) => {
-      console.log("DB connection failed !!! ", err);
+      console.warn("DB connection failed !!! ", err);
       process.exit(1); // stop worker if DB connection fails
     });
 }

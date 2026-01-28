@@ -59,7 +59,7 @@ export const sendMailToUser = async ({
 
     // sending mail
     const info = await transport.sendMail(mailOptions);
-    console.log("Message sent: %s", info.messageId);
+    console.warn("Message sent: %s", info.messageId);
   } catch (error) {
     console.error("Mail send error:", error);
   }

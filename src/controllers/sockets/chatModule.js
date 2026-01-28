@@ -116,7 +116,7 @@ export const userHandler = async (io, socket) => {
       );
     } catch (error) {
       emitError("roomJoin", error, socket);
-      console.log({ error });
+      console.error({ error });
     }
   });
 
@@ -263,7 +263,7 @@ export const userHandler = async (io, socket) => {
       }
       socket.emit("pinChat", new SuccessSend(200, msg, {}));
     } catch (error) {
-      console.log({ error });
+      console.error({ error });
       emitError("pinChat", error, socket);
     }
   });
@@ -342,7 +342,7 @@ export const userHandler = async (io, socket) => {
         new SuccessSend(200, "message retrived successfully", msgMatches)
       );
     } catch (error) {
-      console.log({ error });
+      console.error({ error });
       emitError("msgSearch", error, socket);
     }
   });
@@ -428,7 +428,7 @@ export const userHandler = async (io, socket) => {
         new SuccessSend(200, "searched message", msgMatches)
       );
     } catch (error) {
-      console.log({ error });
+      console.error({ error });
       emitError("searchedMsg", error, socket);
     }
   });
@@ -441,13 +441,13 @@ export const userHandler = async (io, socket) => {
       await deleteChatModels.create({ userId, roomId });
       socket.emit("deleteChat", new SuccessSend(200, "chat deleted"));
     } catch (error) {
-      console.log({ error });
+      console.error({ error });
       emitError("deleteChat", error, socket);
     }
   });
 
   // on disconnect
   socket.on("disconnect", () => {
-    console.log(socket.id, "user disconnected");
+    console.warn(socket.id, "user disconnected");
   });
 };

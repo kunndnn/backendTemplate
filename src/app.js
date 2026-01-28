@@ -30,7 +30,7 @@ if (ENVIRONMENT === "production") {
   };
 
   httpServer = createSecureServer(options, app);
-  console.log("Using HTTPS server for production.");
+  console.warn("Using HTTPS server for production.");
 }
 //initializing io
 const allowedOrigins = [

@@ -34,7 +34,7 @@ const addImageWatermark = async (
     ])
     .toFile(outputImagePath);
 
-  console.log("Watermarked image saved:", outputImagePath);
+  console.warn("Watermarked image saved:", outputImagePath);
 
   // 4. Delete input and watermark files
   [inputImagePath, watermarkImagePath].forEach((filePath) =>

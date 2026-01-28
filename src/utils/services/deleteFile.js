@@ -10,9 +10,9 @@ const deleteFile = (filePath) => {
     const fullPath = path.resolve(filePath);
     if (fs.existsSync(fullPath)) {
       fs.unlinkSync(fullPath);
-      console.log(`Deleted: ${fullPath}`);
+      console.warn(`Deleted: ${fullPath}`);
     } else {
-      console.log(`File not found: ${fullPath}`);
+      console.warn(`File not found: ${fullPath}`);
     }
   } catch (err) {
     console.error(`Error deleting file: ${filePath}`, err);

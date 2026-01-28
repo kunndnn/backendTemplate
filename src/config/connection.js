@@ -7,11 +7,11 @@ export const connectDB = async () => {
     const connectionInstance = await connect(
       `${process.env.MONGODB_URI}/${DB_NAME}`
     );
-    console.log(
+    console.warn(
       `\n MongoDB connected !! DB HOST: ${connectionInstance.connection.host}`
     );
   } catch (error) {
-    console.log("MONGODB connectino error", error);
+    console.warn("MONGODB connectino error", error);
     process.exit(1);
   }
 };

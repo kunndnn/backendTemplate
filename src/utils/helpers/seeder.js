@@ -11,10 +11,10 @@ connectDB()
       password: "P@ssw0rd",
     });
     await mongoose.connection.close();
-    console.log("User created successfully");
+    console.warn("User created successfully");
     process.exit(1);
   })
   .catch((err) => {
-    console.log("DB connection failed !!! ", err);
+    console.warn("DB connection failed !!! ", err);
     process.exit(1);
   });
