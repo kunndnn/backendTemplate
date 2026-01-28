@@ -61,7 +61,7 @@ app
 
 // rate limiter
 import rateLimiter from "#middlewares/rateLimiter";
-app.use(rateLimiter);
+app.use(rateLimiter({ time: 1, limit: 100 }));
 
 // emergency
 app.get("/boom", (req, res) => {
