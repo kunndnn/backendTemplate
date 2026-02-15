@@ -1,16 +1,9 @@
 import "dotenv/config";
 import { connectDB, disconnectDB } from "../../config/connection";
-import userModel from "#models/user.models";
 
 (async () => {
   try {
     await connectDB();
-    await userModel.create({
-      fullName: "test",
-      email: "test2@demo.com",
-      password: "P@ssw0rd",
-    });
-    console.warn("User created successfully");
   } catch (err) {
     console.warn("Operation failed ❌", err);
     process.exit(1); // failure

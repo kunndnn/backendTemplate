@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   login,
   profile,
+  refreshtoken,
   resetPassword,
   sendOTP,
   updatePassword,
@@ -15,6 +16,8 @@ router.post("/login", login);
 router.post("/send-top", sendOTP);
 router.post("/verify-otp", verifyOTP);
 router.post("/reset-password", resetPassword);
+router.route("/refresh-token").post(refreshtoken); // generate refresh token
+
 router
   .route("/profile")
   .get(verifyToken, profile) // get profile

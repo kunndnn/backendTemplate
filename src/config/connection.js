@@ -16,6 +16,15 @@ export const connectDB = async () => {
   }
 };
 
+export const disconnectDB = async () => {
+  try {
+    await mongoose.disconnect();
+    console.warn("MongoDB disconnected successfully");
+  } catch (error) {
+    console.warn("MongoDB disconnection error", error);
+  }
+};
+
 //mysql connection
 // export const con = createConnection({
 //   host: "localhost",
