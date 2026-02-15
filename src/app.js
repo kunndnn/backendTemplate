@@ -7,6 +7,8 @@ import { createServer } from "http";
 import { createServer as createSecureServer } from "https";
 import { Server } from "socket.io";
 import cors from "cors";
+import rateLimiter from "#middlewares/rateLimiter";
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
@@ -53,15 +55,12 @@ app.locals.io = io;
 
 // set middlewares
 app
-  .use(json()) // to convert the body data in JSON
-  .use(urlencoded({ extended: true })) // to encode url data
+  .use(json({ limit: "10mb" })) // to convert the body data in JSON
+  .use(urlencoded({ extended: true, limit: "10mb" })) // to encode url data
   .use(static_("public")) // set public as static folder for assets
   .use(cookieParser()) // to use cookies
-  .use(logger("dev")); // logger in console
-
-// rate limiter
-import rateLimiter from "#middlewares/rateLimiter";
-app.use(rateLimiter({ time: 1, limit: 100 }));
+  .use(logger("dev")) // logger in console
+  .use(rateLimiter({ time: 1, limit: 100 })); // rate limiter
 
 // emergency
 app.get("/boom", (req, res) => {
