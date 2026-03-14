@@ -10,6 +10,8 @@ const { BASE_URL } = process.env;
 
 export const login = promiseHandler(async (req, res) => {
   const { email, password } = req.body;
+    //   "email": "myadmin@yopmail.com",
+    // "password": "Admin@123",
   const admin = await userModel.findOne({ email }).select("+password");
   if (!admin) throw new ErrorSend(403, "User not found");
   const isPasswordValid = await admin.isPasswordCorrect(password);

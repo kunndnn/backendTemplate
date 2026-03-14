@@ -8,6 +8,9 @@ import { createServer as createSecureServer } from "https";
 import { Server } from "socket.io";
 import cors from "cors";
 import rateLimiter from "#middlewares/rateLimiter";
+import cluster from "cluster";
+import { createAdapter } from "@socket.io/cluster-adapter";
+import { setupWorker } from "@socket.io/sticky";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -47,7 +50,13 @@ const io = new Server(httpServer, {
   },
 });
 
+
 // Store io in app locals to access in controllers
+if (!cluster.isPrimary) {
+  io.adapter(createAdapter());
+  setupWorker(io);
+}
+
 app.locals.io = io;
 // use case
 // const io = req.app.locals.io;  // Get io instance from app.locals

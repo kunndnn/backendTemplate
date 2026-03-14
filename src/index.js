@@ -4,6 +4,7 @@ import os from "os";
 import "dotenv/config";
 import { connectDB } from "./config/connection.js";
 import { httpServer } from "./app.js";
+import { setupMaster } from "@socket.io/sticky";
 import cronJobs from "#services/cronJobs";
 
 const numCPUs = os.cpus().length;
@@ -15,6 +16,10 @@ if (cluster.isPrimary) {
 
   // Master process
   console.warn(`Master ${process.pid} is running`);
+
+  setupMaster(httpServer, {
+    loadBalancingMethod: "round-robin",
+  });
 
   // Fork workers = number of CPU cores
   for (let i = 0; i < numCPUs; i++) {

@@ -21,6 +21,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@socket.io/cluster-adapter": "^0.3.0",
+    "@socket.io/sticky": "^1.0.4",
     "aws-sdk": "^2.1692.0",
     "axios": "^1.10.0",
     "bcrypt": "^5.1.1",
