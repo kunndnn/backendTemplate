@@ -3,6 +3,7 @@ import cluster from "cluster";
 import os from "os";
 import "dotenv/config";
 import { connectDB } from "./config/connection.js";
+import { connectRedis } from "./config/redis.js";
 import { httpServer } from "./app.js";
 import { setupMaster } from "@socket.io/sticky";
 import cronJobs from "#services/cronJobs";
@@ -34,13 +35,14 @@ if (cluster.isPrimary) {
 } else {
   // Worker processes
   connectDB()
+    .then(connectRedis)
     .then(() => {
       httpServer.listen(PORT, () =>
         console.warn(`Worker ${process.pid} running at http://localhost:${PORT}`)
       );
     })
     .catch((err) => {
-      console.warn("DB connection failed !!! ", err);
+      console.warn("Startup connection failed !!! ", err);
       process.exit(1); // stop worker if DB connection fails
     });
 }

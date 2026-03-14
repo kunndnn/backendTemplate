@@ -13,7 +13,7 @@ import { verifyToken } from "#middlewares/verifyToken";
 const router = Router();
 
 router.post("/login", login);
-router.post("/send-top", sendOTP);
+router.post("/send-otp", sendOTP);
 router.post("/verify-otp", verifyOTP);
 router.post("/reset-password", resetPassword);
 router.route("/refresh-token").post(refreshtoken); // generate refresh token
