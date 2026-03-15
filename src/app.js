@@ -1,16 +1,21 @@
 import path from "path";
 import { fileURLToPath } from "url";
-import express, { json, urlencoded, static as static_ } from "express";
+import fs from "fs";
+import express from "express";
 import cookieParser from "cookie-parser";
 import logger from "morgan";
 import { createServer } from "http";
 import { createServer as createSecureServer } from "https";
 import { Server } from "socket.io";
 import cors from "cors";
+import helmet from "helmet";
+import compression from "compression";
 import rateLimiter from "#middlewares/rateLimiter";
 import cluster from "cluster";
 import { createAdapter } from "@socket.io/cluster-adapter";
 import { setupWorker } from "@socket.io/sticky";
+import authRoutes from "./routes/route.js";
+import errorHandler from "#middlewares/errorHandler";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -64,9 +69,11 @@ app.locals.io = io;
 
 // set middlewares
 app
-  .use(json({ limit: "10mb" })) // to convert the body data in JSON
-  .use(urlencoded({ extended: true, limit: "10mb" })) // to encode url data
-  .use(static_("public")) // set public as static folder for assets
+  .use(helmet()) // security headers
+  .use(compression()) // compress all responses
+  .use(express.json({ limit: "10mb" })) // to convert the body data in JSON
+  .use(express.urlencoded({ extended: true, limit: "10mb" })) // to encode url data
+  .use(express.static("public")) // set public as static folder for assets
   .use(cookieParser()) // to use cookies
   .use(logger("dev")) // logger in console
   .use(rateLimiter({ time: 1, limit: 100 })); // rate limiter
@@ -76,10 +83,8 @@ app.get("/boom", (req, res) => {
   process.exit(1);
 });
 
-// import routes
-import auth from "./routes/route.js";
 // use routes
-app.use("/api/v1", auth);
+app.use("/api/v1", authRoutes);
 
 //health check
 app.get("/health", (req, res) => {
@@ -91,12 +96,14 @@ app.get("/health", (req, res) => {
 });
 
 // frontend host configs
-app.use(static_(path.join(__dirname, "../frontend"))).get("*", (req, res) => {
+app.use(express.static(path.join(__dirname, "../frontend")))
+// .get("*", (req, res) => {
+//   res.sendFile(path.join(__dirname, "../frontend", "index.html"));
+// });
+app.use((req, res) => {
   res.sendFile(path.join(__dirname, "../frontend", "index.html"));
 });
-
 //error handler middleware
-import errorHandler from "#middlewares/errorHandler";
 app.use(errorHandler);
 
 // socket handlers

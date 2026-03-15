@@ -1,16 +1,17 @@
-import { promiseHandler } from "#helpers/promiseHandler";
-import { ErrorSend } from "#helpers/response";
+import { ErrorSend, SuccessSend } from "#helpers/response";
 import userModels from "#models/user.models";
+import httpStatus from "http-status";
 
-export const usersListing = promiseHandler(async (req, res) => {
+export const usersListing = async (req, res) => {
   const users = await userModels.find({ role: 1 }).lean();
-  res.status(200).json(new SuccessSend(200, "Users listing", users));
-});
+  res.status(httpStatus.OK).json(new SuccessSend(httpStatus.OK, "Users listing", users));
+};
 
-export const userStatusChange = promiseHandler(async (req, res) => {
+export const userStatusChange = async (req, res) => {
   const { userId } = req.params;
   const user = await userModels.findById(userId);
-  if (!user) throw new ErrorSend(404, "User not found");
+  if (!user) throw new ErrorSend(httpStatus.NOT_FOUND, "User not found");
+  
   let msg = "";
   if (user.isActive) {
     msg = "User in active succesfully";
@@ -20,17 +21,17 @@ export const userStatusChange = promiseHandler(async (req, res) => {
     user.isActive = true;
   }
   await user.save();
-  res.status(200).json(new SuccessSend(200, msg, user));
-});
+  res.status(httpStatus.OK).json(new SuccessSend(httpStatus.OK, msg, user));
+};
 
-export const userDelete = promiseHandler(async (req, res) => {
+export const userDelete = async (req, res) => {
   const { userId } = req.params;
   const user = await userModels.findByIdAndDelete(userId).lean();
-  res.status(200).json(new SuccessSend(200, "User deleted successfully", user));
-});
+  res.status(httpStatus.OK).json(new SuccessSend(httpStatus.OK, "User deleted successfully", user));
+};
 
-export const userDetail = promiseHandler(async (req, res) => {
+export const userDetail = async (req, res) => {
   const { userId } = req.params;
   const user = await userModels.findById(userId).lean();
-  res.status(200).json(new SuccessSend(200, "User detail", user));
-});
+  res.status(httpStatus.OK).json(new SuccessSend(httpStatus.OK, "User detail", user));
+};

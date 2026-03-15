@@ -1,10 +1,10 @@
-import { promiseHandler } from "#helpers/promiseHandler";
 import { SuccessSend } from "#helpers/response";
 import chatModels from "#models/chat.models";
 import userModels from "#models/user.models";
 import { getGraphData } from "#services/dbQueries";
+import httpStatus from "http-status";
 
-export const dashboard = promiseHandler(async (req, res) => {
+export const dashboard = async (req, res) => {
   const [userCount, activeUserCount, chatCount, userStats, chatStats] =
     await Promise.all([
       userModels.countDocuments({ role: 1 }),
@@ -22,5 +22,5 @@ export const dashboard = promiseHandler(async (req, res) => {
     chatStats,
   };
 
-  res.status(200).json(new SuccessSend(200, "Dashboard stats", result));
-});
+  res.status(httpStatus.OK).json(new SuccessSend(httpStatus.OK, "Dashboard stats", result));
+};

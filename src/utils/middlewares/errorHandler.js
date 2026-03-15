@@ -3,73 +3,52 @@ import { ErrorSend } from "#helpers/response";
 import deleteFile from "#services/deleteFile";
 import mongoose from "mongoose";
 import path from "path";
+import httpStatus from "http-status";
+
 export default (err, req, res, next) => {
-  let statusCode = 500;
-  let message = "Internal Server Error";
+  let statusCode = err.statusCode || err.status || httpStatus.INTERNAL_SERVER_ERROR;
+  let message = err.message || httpStatus[statusCode];
 
+  // Cleanup uploaded files on error
   if (req?.file) {
-    // if has single file then delete it
-    const filePath = path.resolve(req.file.path);
-    deleteFile(filePath);
+    deleteFile(path.resolve(req.file.path));
   }
-
-  // Check if there are multiple files (req.files) and delete them
   if (req?.files) {
-    const files = Array.isArray(req.files)
-      ? req.files
-      : Object.values(req.files).flat();
-    files.forEach((file) => {
-      const filePath = path.resolve(file.path);
-      deleteFile(filePath);
-    });
+    const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
+    files.forEach((file) => deleteFile(path.resolve(file.path)));
   }
 
-  if (err instanceof ErrorSend) {
-    // Check if the error is an instance of ErrorSend
-    statusCode = err.statusCode;
-    message = err.message;
-  } else if (typeof err === "string") {
-    message = err;
-  }
-  // Handle other errors (e.g., Mongoose, ValidationError, etc.)
-  else if (err instanceof mongoose.Error.ValidationError) {
-    statusCode = 400;
-    message = Object.values(err.errors)
-      .map((e) => e.message)
-      .join(", ");
-  } else if (err.code && err.code === 11000) {
-    statusCode = 409;
+  // Handle specific error types
+  if (err instanceof mongoose.Error.ValidationError) {
+    statusCode = httpStatus.BAD_REQUEST;
+    message = Object.values(err.errors).map((e) => e.message).join(", ");
+  } else if (err.code === 11000) {
+    statusCode = httpStatus.CONFLICT;
     const field = Object.keys(err.keyValue);
     message = `Duplicate key error: ${field} already exists.`;
   } else if (err instanceof mongoose.Error.CastError) {
-    statusCode = 400;
+    statusCode = httpStatus.BAD_REQUEST;
     message = `Invalid ${err.path}: ${err.value}.`;
-  } else if (err.name === "ValidationError") {
-    statusCode = 400;
-    message = err.message;
   } else if (err.name === "SyntaxError") {
-    statusCode = 400;
+    statusCode = httpStatus.BAD_REQUEST;
     message = "Invalid JSON payload";
   } else if (err.name === "UnauthorizedError") {
-    statusCode = 401;
+    statusCode = httpStatus.UNAUTHORIZED;
     message = "Invalid token";
-  } else {
-    message = err.message ?? message;
   }
 
-  // Log the error for debugging
+  // Log error
   console.error({ err });
   logger.error(
-    `${err.status ?? 500} - ${err.message} - ${req.originalUrl} - ${
-      req.method
-    } - ${req.ip}`
+    `${statusCode} - ${message} - ${req.originalUrl} - ${req.method} - ${req.ip}`
   );
 
-  // Send the error response including the message
+  // Final response format
   res.status(statusCode).json({
     success: false,
     statusCode,
-    message, // Ensure message is included in the response
+    message,
     data: null,
+    ...(process.env.ENVIRONMENT === "development" && { stack: err.stack }),
   });
 };
