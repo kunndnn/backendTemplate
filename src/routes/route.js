@@ -5,6 +5,7 @@ import adminAuthRoute from "./admin/auth.routes.js";
 import dashboardRoute from "./admin/dashboard.routes.js";
 import adminUserRoute from "./admin/user.routes.js";
 import notificationRoute from "./admin/notification.routes.js";
+import userNotificationRoute from "./user/notification.routes.js";
 
 // admin routes
 router.use("/admin", adminAuthRoute);
@@ -14,5 +15,6 @@ router.use("/admin/notification", notificationRoute);
 
 // user routes
 router.use("/user", userAuthRoute);
+router.use("/user/notification", userNotificationRoute);
 
 export default router;

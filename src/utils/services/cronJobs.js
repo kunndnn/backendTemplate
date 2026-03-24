@@ -3,6 +3,7 @@ import moment from "moment-timezone";
 import NotificationSchedule from "#models/notificationSchedule.models";
 import NotificationLog from "#models/notificationLog.models";
 import UserDevice from "#models/userDevice.models";
+import Notification from "#models/notification.models";
 import { sendPushNotification } from "#helpers/pushNotify";
 
 const processSchedules = async () => {
@@ -22,18 +23,32 @@ const processSchedules = async () => {
 
         if (nowInAdminTz.isSameOrAfter(scheduledInAdminTz)) {
           console.warn(`[Cron] Processing schedule ${_id} (Admin TZ: ${timezone})`);
-
+          
           let devices = [];
+          let userIds = [];
           if (targetUsers === "all") {
             devices = await UserDevice.find().lean();
+            userIds = devices.map(d => d.userId);
           } else {
             devices = await UserDevice.find({ userId: { $in: targetUsers } }).lean();
+            userIds = targetUsers;
           }
 
           const tokens = devices.map(d => d.deviceToken).filter(Boolean);
-
-          // Send to all (can be optimized with bulk send if Firebase supports it well)
+          
+          // Send push notifications
           await Promise.all(tokens.map(token => sendPushNotification(token, title, body)));
+
+          // Save persistent notifications for each user
+          const uniqueUserIds = [...new Set(userIds.map(id => String(id)))];
+          await Notification.insertMany(
+            uniqueUserIds.map(uid => ({
+              userId: uid,
+              title,
+              description: body,
+              scheduleId: _id,
+            }))
+          );
 
           schedule.status = "completed";
           await schedule.save();
@@ -42,7 +57,7 @@ const processSchedules = async () => {
       } else {
         // Case B: Deliver at device's local time
         console.warn(`[Cron] Processing schedule ${_id} (Device Local Time)`);
-
+        
         let devices = [];
         if (targetUsers === "all") {
           devices = await UserDevice.find().lean();
@@ -62,8 +77,21 @@ const processSchedules = async () => {
           const scheduledInDeviceTz = moment.tz(scheduledAtStr, "YYYY-MM-DD HH:mm", deviceTimezone);
 
           if (nowInDeviceTz.isSameOrAfter(scheduledInDeviceTz)) {
+            // Send push
             await sendPushNotification(device.deviceToken, title, body);
             await NotificationLog.create({ scheduleId: _id, deviceId: device._id });
+
+            // Save persistent notification for the user (only if not already created for this schedule)
+            const exists = await Notification.findOne({ userId: device.userId, scheduleId: _id });
+            if (!exists) {
+              await Notification.create({
+                userId: device.userId,
+                title,
+                description: body,
+                scheduleId: _id,
+              });
+            }
+            
             console.warn(`[Cron] Delivered schedule ${_id} to device ${device._id} (${deviceTimezone})`);
           } else {
             allDelivered = false;
