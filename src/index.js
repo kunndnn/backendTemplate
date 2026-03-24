@@ -35,7 +35,7 @@ if (cluster.isPrimary) {
 } else {
   // Worker processes
   connectDB()
-    // .then(connectRedis)
+    .then(connectRedis)
     .then(() => {
       httpServer.listen(PORT, () =>
         console.warn(`Worker ${process.pid} running at http://localhost:${PORT}`)
