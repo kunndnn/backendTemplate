@@ -1,12 +1,11 @@
 import { Schema, model } from "mongoose";
 import jwt from "jsonwebtoken";
 import { hash, genSalt, compare } from "bcrypt";
-const { BASE_URL } = process.env;
 const userSchema = new Schema(
   {
     fullName: {
       type: String,
-      required: [true, "Name is required"],
+      required: [true, "Full name is required"],
       trim: true,
       index: true,
     },

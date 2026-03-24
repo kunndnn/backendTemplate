@@ -23,11 +23,13 @@ export const register = async (req, res) => {
     deviceId: userData.deviceId,
     deviceType: userData.deviceType,
     deviceToken: userData.deviceToken,
+    timezone: userData.timezone,
   };
 
   delete userData.deviceId;
   delete userData.deviceType;
   delete userData.deviceToken;
+  delete userData.timezone;
 
   const user = await userModel.create(userData);
   const token = user.generatetoken();
@@ -49,7 +51,7 @@ export const register = async (req, res) => {
 };
 
 export const login = async (req, res) => {
-  const { email, password, deviceId, deviceType, deviceToken } = req.body;
+  const { email, password, deviceId, deviceType, deviceToken, timezone } = req.body;
   const user = await userModel.findOne({ email }).select("+password").lean();
 
   if (!user) throw new ErrorSend(httpStatus.FORBIDDEN, "User not found");
@@ -63,7 +65,7 @@ export const login = async (req, res) => {
   ]);
 
   await userDeviceModels.findOneAndUpdate(
-    { deviceId, deviceType, deviceToken },
+    { deviceId, deviceType, deviceToken, timezone },
     { userId: user._id },
     { upsert: true, new: true }
   );
@@ -83,7 +85,7 @@ export const login = async (req, res) => {
 
 export const socialLogin = async (req, res) => {
   const userData = req.body;
-  const { email, socialId, socialType, image, deviceId, deviceType, deviceToken } = userData;
+  const { email, socialId, socialType, image, deviceId, deviceType, deviceToken, timezone } = userData;
   const userExist = await userModel.findOne({ email });
   let token, refreshToken, user;
 
@@ -106,7 +108,7 @@ export const socialLogin = async (req, res) => {
   }
 
   await userDeviceModels.findOneAndUpdate(
-    { deviceId, deviceType, deviceToken },
+    { deviceId, deviceType, deviceToken, timezone },
     { userId: user._id },
     { upsert: true, new: true }
   );

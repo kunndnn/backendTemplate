@@ -14,6 +14,8 @@ import rateLimiter from "#middlewares/rateLimiter";
 import cluster from "cluster";
 import { createAdapter } from "@socket.io/cluster-adapter";
 import { setupWorker } from "@socket.io/sticky";
+import swaggerUi from "swagger-ui-express";
+import swaggerSpec from "./config/swagger.js";
 import authRoutes from "./routes/route.js";
 import errorHandler from "#middlewares/errorHandler";
 
@@ -33,6 +35,10 @@ app.use(
 );
 
 if (ENVIRONMENT === "production") {
+
+  // security headers
+  app.use(helmet())
+  
   // Load SSL certificate and key
   const options = {
     key: fs.readFileSync(path.resolve("path/to/ssl/key.pem")),
@@ -69,7 +75,6 @@ app.locals.io = io;
 
 // set middlewares
 app
-  .use(helmet()) // security headers
   .use(compression()) // compress all responses
   .use(express.json({ limit: "10mb" })) // to convert the body data in JSON
   .use(express.urlencoded({ extended: true, limit: "10mb" })) // to encode url data
@@ -85,6 +90,9 @@ app.get("/boom", (req, res) => {
 
 // use routes
 app.use("/api/v1", authRoutes);
+
+// Swagger documentation
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 //health check
 app.get("/health", (req, res) => {

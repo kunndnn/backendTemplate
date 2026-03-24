@@ -1,5 +1,4 @@
 import logger from "#config/logger";
-import { ErrorSend } from "#helpers/response";
 import deleteFile from "#services/deleteFile";
 import mongoose from "mongoose";
 import path from "path";
@@ -48,7 +47,5 @@ export default (err, req, res, next) => {
     success: false,
     statusCode,
     message,
-    data: null,
-    ...(process.env.ENVIRONMENT === "development" && { stack: err.stack }),
   });
 };
